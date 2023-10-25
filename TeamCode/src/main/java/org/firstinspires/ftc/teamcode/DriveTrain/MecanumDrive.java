@@ -6,13 +6,13 @@ import static java.lang.Math.max;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class MecanumDrive extends DriveTrain {
-    MecanumDrive(DcMotor leftFront, DcMotor rightFront, DcMotor leftBack, DcMotor rightBack, ElapsedTime runtime) {
+public class MecanumDrive extends driveTrain {
+    public MecanumDrive(DcMotor leftFront, DcMotor rightFront, DcMotor leftBack, DcMotor rightBack, ElapsedTime runtime) {
         super(leftFront, rightFront, leftBack, rightBack, runtime);
     }
 
     @Override
-    void moveForward(int milliseconds, int power) {
+    public void turnCounterClockwise(int milliseconds, double power) {
         double p1, p2, p3, p4;
         double maxval;
         double y;
@@ -54,7 +54,7 @@ public class MecanumDrive extends DriveTrain {
     }
 
     @Override
-    void moveBackward(int milliseconds, int power) {
+    public void turnClockwise(int milliseconds, double power) {
         double p1, p2, p3, p4;
         double maxval;
         double y;
@@ -97,7 +97,7 @@ public class MecanumDrive extends DriveTrain {
     }
 
     @Override
-    void turnClockwise(int milliseconds, int power) {
+    public void moveForward(int milliseconds, double power) {
         double p1, p2, p3, p4;
         double maxval;
         double y;
@@ -140,7 +140,7 @@ public class MecanumDrive extends DriveTrain {
     }
 
     @Override
-    void turnCounterClockwise(int milliseconds, int power) {
+    public void moveBackward(int milliseconds, double power) {
         double p1, p2, p3, p4;
         double maxval;
         double y;
@@ -179,10 +179,11 @@ public class MecanumDrive extends DriveTrain {
         rightFront.setPower(0);
         leftBack.setPower(0);
         rightBack.setPower(0);
+
     }
 
     @Override
-    void strafeLeft(int milliseconds, int power) {
+    public void strafeLeft(int milliseconds, double power) {
         double p1, p2, p3, p4;
         double maxval;
         double y;
@@ -224,7 +225,7 @@ public class MecanumDrive extends DriveTrain {
     }
 
     @Override
-    void strafeRight(int milliseconds, int power) {
+    public void strafeRight(int milliseconds, double power) {
         double p1, p2, p3, p4;
         double maxval;
         double y;

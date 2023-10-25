@@ -22,11 +22,11 @@ public class TeleOp2223 extends LinearOpMode {
     private DcMotor leftFront = null;
     private DcMotor rightFront = null;
 
-    private DcMotor lift1 = null;
-    private DcMotor lift2 = null;
+    private DcMotor leftLift = null;
+    private DcMotor rightLift = null;
 
-    private Servo clawServo1 = null;
-
+    private Servo clawOpen = null;
+    private Servo servoFlip = null;
 
 
     @Override
@@ -50,26 +50,25 @@ public class TeleOp2223 extends LinearOpMode {
         //attachments
         //Add lifts + servo motors to Configuration
 
-       lift1 = hardwareMap.get(DcMotor.class, "lift1");
-       lift2 = hardwareMap.get(DcMotor.class, "lift2");
+       leftLift = hardwareMap.get(DcMotor.class, "leftLift");
+       rightLift = hardwareMap.get(DcMotor.class, "rightLift");
 
-       clawServo1 = hardwareMap.get(Servo.class, "servo1");
+       clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+       servoFlip = hardwareMap.get(Servo.class, "servoFlip");
 
         double x;
         double y;
         double r;
 
-        // clawServo1.setPosition(0);
 
         waitForStart();
         runtime.reset();
 
         while (opModeIsActive()) {
-            //clawServo.setPosition(0);
-
-            x = -gamepad1.right_stick_y; //forward backward
-            y = gamepad1.right_stick_x; //strafe left and right
-            r = gamepad1.left_stick_x; // turning left and right
+            clawOpen.setPosition(0);
+            y = gamepad1.x?-0.75:gamepad1.b?0.75:0; //forward backward
+            r = gamepad1.dpad_up?-0.75:gamepad1.dpad_down?0.75:0; //strafe left and right
+            x = gamepad1.dpad_left?-0.75:gamepad1.dpad_right?0.75:0; // turning left and right
             String message = "";
             message += x;
             message += ",";
@@ -105,7 +104,41 @@ public class TeleOp2223 extends LinearOpMode {
             leftBack.setPower(p3);
             rightBack.setPower(p4);
 
+            if (gamepad2.dpad_up){
+                //lift1.setPower(.5);
+                leftLift.setPower(-.25);
 
+            }else if (gamepad2.dpad_down) {
+                //lift1.setPower(-.5);
+                leftLift.setPower(.25);
+            }else{
+                leftLift.setPower(0);
+                rightLift.setPower(0);
+            }
+            if(gamepad2.x){
+                clawOpen.setPosition(0);
+            }
+            if(gamepad2.b){
+                clawOpen.setPosition(0.05);
+            }
+            //}
+            if(gamepad2.y){
+                servoFlip.setPosition(0.65);
+            }
+            if(gamepad2.a){
+                servoFlip.setPosition(0.45);
+            }
+            if (gamepad2.dpad_up){
+                //lift1.setPower(.5);
+                rightLift.setPower(-.1);
+
+            }else if (gamepad2.dpad_down) {
+                //lift1.setPower(-.5);
+                rightLift.setPower(.1);
+            }else{
+                leftLift.setPower(0);
+                rightLift.setPower(0);
+            }
         }
     }
     public void printMessage(String message) {
