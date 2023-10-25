@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+//import com.acmerobotics.dashboard.FtcDashboard;
+//import com.acmerobotics.dashboard.config.Config;
+//import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
@@ -12,7 +12,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
-@Config //Disable if not using FTC Dashboard https://github.com/PinkToTheFuture/OpenCV_FreightFrenzy_2021-2022#opencv_freightfrenzy_2021-2022
+//@Config //Disable if not using FTC Dashboard https://github.com/PinkToTheFuture/OpenCV_FreightFrenzy_2021-2022#opencv_freightfrenzy_2021-2022
 @Autonomous(name="OpenCV_Contour_3954_Test", group="Tutorials")
 
 public class OpenCV_Contour_3954_Test extends LinearOpMode {
@@ -72,9 +72,9 @@ public class OpenCV_Contour_3954_Test extends LinearOpMode {
             }
         });
         // Only if you are using ftcdashboard
-        FtcDashboard dashboard = FtcDashboard.getInstance();
-        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
-        FtcDashboard.getInstance().startCameraStream(webcam, 10);
+       // FtcDashboard dashboard = FtcDashboard.getInstance();
+        //telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        //FtcDashboard.getInstance().startCameraStream(webcam, 10);
 
         telemetry.update();
         waitForStart();
