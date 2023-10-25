@@ -40,6 +40,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 
+
 /*
  * This OpMode illustrates the basics of AprilTag recognition and pose estimation, using
  * the easy way.

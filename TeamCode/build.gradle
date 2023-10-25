@@ -33,3 +33,8 @@ dependencies {
     implementation project(':FtcRobotController')
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
 }
+dependencies {
+    implementation ('com.acmerobotics.dashboard:dashboard:0.4.13') {
+        exclude group: 'org.firstinspires.ftc'
+    }
+}
