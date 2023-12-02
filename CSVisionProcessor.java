@@ -3,20 +3,21 @@ package org.firstinspires.ftc.teamcode;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import java.util.List;
-import java.util.ArrayList;
 
 import org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion;
 import org.firstinspires.ftc.robotcore.external.ExportToBlocks;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionProcessor;
-import org.opencv.core.Size;
-import org.opencv.core.Point;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionProcessor{
@@ -100,44 +101,66 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
 //        double satRectLeft = getAvgSaturation(hsvMat, rectLeft);
 //        double satRectMiddle = getAvgSaturation(hsvMat, rectMiddle);
 //        double satRectRight = getAvgSaturation(hsvMat, rectRight);
-          double ilowH = 106;
-          double ilowS = 124;
-          double ilowV = 0;
+        double ilowH = 106;
+        double ilowS = 124;
+        double ilowV = 0;
 
-          double ihighH = 134;
-          double ihighS = 255;
-          double ihighV = 191;
-          Mat threshMat = new Mat();
-          Scalar lower_hsv = new Scalar(ilowH, ilowS, ilowV);
-          Scalar higher_hsv = new Scalar(ihighH, ihighS, ihighV);
-          Core.inRange(hsvMat, lower_hsv, higher_hsv, threshMat);
+        double ihighH = 134;
+        double ihighS = 255;
+        double ihighV = 191;
+        Mat threshMat = new Mat();
+        Scalar lower_hsv = new Scalar(ilowH, ilowS, ilowV);
+        Scalar higher_hsv = new Scalar(ihighH, ihighS, ihighV);
+        Core.inRange(hsvMat, lower_hsv, higher_hsv, threshMat);
 
         //apply morphology
-          Size kernel1 = new Size(9,9);
-          Size kernel2 = new Size(15,15);
-          Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, kernel1);
-          Mat cleanMat = new Mat();
-          Imgproc.morphologyEx(threshMat, cleanMat, Imgproc.MORPH_OPEN, kernel);
-          kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, kernel2);
-          Imgproc.morphologyEx(cleanMat, cleanMat, Imgproc.MORPH_CLOSE, kernel);
+        Size kernel1 = new Size(9,9);
+        Size kernel2 = new Size(15,15);
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, kernel1);
+        Mat cleanMat = new Mat();
+        Imgproc.morphologyEx(threshMat, cleanMat, Imgproc.MORPH_OPEN, kernel);
+        kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, kernel2);
+        Imgproc.morphologyEx(cleanMat, cleanMat, Imgproc.MORPH_CLOSE, kernel);
 
         // get external contours
-          List<MatOfPoint> contours = new ArrayList<>();
-          Mat hierarchy = new Mat();
-          Imgproc.findContours(cleanMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-//          contours = contours[0] if len(contours) == 2 else contours[1]
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(cleanMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        int max_index = -1;
+        double max_area = -1;
+        for(int i = 0; i < contours.size(); i++) {
+            double Area = Imgproc.contourArea(contours.get(i));
 
-//        if ((satRectLeft > satRectMiddle) && (satRectLeft > satRectRight)) {
-//            selection = StartingPosition.LEFT;
-//
-//        }else if ((satRectMiddle > satRectLeft) && (satRectMiddle > satRectRight)){
-//            selection = StartingPosition.CENTER;
-//
-//        }else if ((satRectRight > satRectMiddle) && (satRectRight > satRectLeft)){
-//            selection = StartingPosition.RIGHT;
-//        }else{
+            if(Area > max_area){
+                max_area = Area;
+                max_index = i;
+            }
+        }
+        double leftTh = 200;
+        double rightTh = 475;
+        int leftCounter = 0;
+        int rightCounter = 0;
 
-            selection = StartingPosition.NONE;
+        Rect box = Imgproc.boundingRect(contours.get(max_index));
+
+            if ((box.width + box.x) < leftTh) {
+                leftCounter += 1;
+
+            }else if (box.x > rightTh) {
+                rightCounter += 1;
+            }
+
+        if (leftCounter == 1) {
+            selection = StartingPosition.LEFT;
+
+        }else if (leftCounter == 0 && rightCounter == 0){
+            selection = StartingPosition.CENTER;
+
+        }else if (rightCounter == 1){
+            selection = StartingPosition.RIGHT;
+        }else{
+
+        selection = StartingPosition.NONE;
 //        }
 
         return selection;
