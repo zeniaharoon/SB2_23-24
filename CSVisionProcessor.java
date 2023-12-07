@@ -20,14 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionProcessor{
+public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionProcessor {
     //uncomment and determine the correct starting rectangles for your robot (If Using Java or this class directly)
     private Rect rectLeft;// =
     // ew Rect(100, 202, 80, 80);
     private Rect rectMiddle;// = new Rect(200, 202, 80, 80);
 
     private Rect rectRight;// = new Rect(300, 202, 80, 80);
-
 
 
     StartingPosition selection = StartingPosition.NONE;
@@ -48,7 +47,7 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
             int leftX, int leftY,
             int middleX, int middleY,
             int rightX, int rightY
-    ){
+    ) {
         _csVision = new CSVisionProcessor(width, leftX, leftY, middleX, middleY, rightX, rightY);
         return _csVision;
     }
@@ -58,7 +57,7 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
             tooltip = "Auto OpMode Vision Position"
 
     )
-    public static StartingPosition getPosition(){
+    public static StartingPosition getPosition() {
         return _csVision.getStartingPosition();
     }
 
@@ -67,24 +66,22 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
             tooltip = "Auto OpMode Vision Position"
 
     )
-    public static int getIntPosition(){
+    public static int getIntPosition() {
         StartingPosition pos = _csVision.getStartingPosition();
 
-        if(pos == StartingPosition.LEFT){
+        if (pos == StartingPosition.LEFT) {
             return 1;
-        }
-        else if(pos == StartingPosition.CENTER){
+        } else if (pos == StartingPosition.CENTER) {
             return 2;
-        }
-        else if(pos == StartingPosition.RIGHT){
+        } else if (pos == StartingPosition.RIGHT) {
             return 3;
         }
 
         return 0;
     }
 
-    public CSVisionProcessor(int width, int leftX, int leftY, int middleX, int middleY, int rightX, int rightY){
-        rectLeft = new Rect(leftX, leftY,width, width);
+    public CSVisionProcessor(int width, int leftX, int leftY, int middleX, int middleY, int rightX, int rightY) {
+        rectLeft = new Rect(leftX, leftY, width, width);
         rectMiddle = new Rect(middleX, middleY, width, width);
         rectRight = new Rect(rightX, rightY, width, width);
     }
@@ -114,8 +111,8 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
         Core.inRange(hsvMat, lower_hsv, higher_hsv, threshMat);
 
         //apply morphology
-        Size kernel1 = new Size(9,9);
-        Size kernel2 = new Size(15,15);
+        Size kernel1 = new Size(9, 9);
+        Size kernel2 = new Size(15, 15);
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, kernel1);
         Mat cleanMat = new Mat();
         Imgproc.morphologyEx(threshMat, cleanMat, Imgproc.MORPH_OPEN, kernel);
@@ -128,10 +125,10 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
         Imgproc.findContours(cleanMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
         int max_index = -1;
         double max_area = -1;
-        for(int i = 0; i < contours.size(); i++) {
+        for (int i = 0; i < contours.size(); i++) {
             double Area = Imgproc.contourArea(contours.get(i));
 
-            if(Area > max_area){
+            if (Area > max_area) {
                 max_area = Area;
                 max_index = i;
             }
@@ -143,36 +140,36 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
 
         Rect box = Imgproc.boundingRect(contours.get(max_index));
 
-            if ((box.width + box.x) < leftTh) {
-                leftCounter += 1;
+        if ((box.width + box.x) < leftTh) {
+            leftCounter += 1;
 
-            }else if (box.x > rightTh) {
-                rightCounter += 1;
-            }
+        } else if (box.x > rightTh) {
+            rightCounter += 1;
+        }
 
         if (leftCounter == 1) {
             selection = StartingPosition.LEFT;
 
-        }else if (leftCounter == 0 && rightCounter == 0){
+        } else if (leftCounter == 0 && rightCounter == 0) {
             selection = StartingPosition.CENTER;
 
-        }else if (rightCounter == 1){
+        } else if (rightCounter == 1) {
             selection = StartingPosition.RIGHT;
-        }else{
+        } else {
 
-        selection = StartingPosition.NONE;
-//        }
+            selection = StartingPosition.NONE;
+        }
 
         return selection;
     }
 
-    protected double getAvgSaturation(Mat input, Rect rect) {
-        submat = input.submat(rect);
-        Scalar color = Core.mean(submat);
-        return color.val[1];
-    }
+//    protected double getAvgSaturation(Mat input, Rect rect) {
+//        submat = input.submat(rect);
+//        Scalar color = Core.mean(submat);
+//        return color.val[1];
+//    }
 
-    private android.graphics.Rect makeGraphicsRect(Rect rect, float  scaleBmpPxToCanvasPx) {
+    private android.graphics.Rect makeGraphicsRect(Rect rect, float scaleBmpPxToCanvasPx) {
         int left = Math.round(rect.x * scaleBmpPxToCanvasPx);
 
         int top = Math.round(rect.y * scaleBmpPxToCanvasPx);
@@ -184,8 +181,8 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
     }
 
     @Override
-    public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object userContext)
-    {
+    public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight,
+                            float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object userContext) {
         Paint selectedPaint = new Paint();
         selectedPaint.setColor(Color.RED);
         selectedPaint.setStyle(Paint.Style.STROKE);
@@ -202,7 +199,7 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
 
         selection = (StartingPosition) userContext;
 
-        switch(selection){
+        switch (selection) {
             case LEFT:
                 canvas.drawRect(drawRectangleLeft, selectedPaint);
                 canvas.drawRect(drawRectangleMiddle, nonSelected);
@@ -229,11 +226,11 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
 
     }
 
-    public StartingPosition getStartingPosition(){
+    public StartingPosition getStartingPosition() {
         return selection;
     }
 
-    public enum StartingPosition{
+    public enum StartingPosition {
         NONE,
         LEFT,
         RIGHT,
@@ -241,3 +238,4 @@ public class CSVisionProcessor  extends BlocksOpModeCompanion implements VisionP
     }
 
 }
+
