@@ -1,0 +1,42 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.vision.VisionPortal;
+//import CSVisionProcessor;
+
+@Autonomous(name = "VisionOpMode12923", group = "Robot")
+public class SampleVisionOpMode extends LinearOpMode {
+
+    private CSVisionProcessor visionProcessor;
+    private VisionPortal visionPortal;
+
+    @Override
+    public void runOpMode() {
+
+        visionProcessor = new CSVisionProcessor(1,1,2,3,4,5,6);
+        visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), visionProcessor);
+
+        CSVisionProcessor.StartingPosition startingPos = CSVisionProcessor.StartingPosition.NONE;
+
+        waitForStart();
+
+        // run until the end of the match (driver presses STOP)
+        while (opModeIsActive()) {
+            telemetry.addData("Identified", visionProcessor.getStartingPosition());
+            telemetry.update();
+            //use the value of startingPos to determine your location
+
+        }
+        visionPortal.stopStreaming();
+
+    }
+
+
+
+
+
+
+}
