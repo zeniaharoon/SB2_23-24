@@ -138,31 +138,34 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         int leftCounter = 0;
         int rightCounter = 0;
 
-        Rect box = Imgproc.boundingRect(contours.get(max_index));
+        if (max_index < 0) {
+            Rect box = Imgproc.boundingRect(contours.get(max_index));
 
-        if ((box.width + box.x) < leftTh) {
-            leftCounter += 1;
 
-        } else if (box.x > rightTh) {
-            rightCounter += 1;
+            if ((box.width + box.x) < leftTh) {
+                leftCounter += 1;
+
+            } else if (box.x > rightTh) {
+                rightCounter += 1;
+            }
+
+            if (leftCounter == 1) {
+                selection = StartingPosition.LEFT;
+
+            } else if (leftCounter == 0 && rightCounter == 0) {
+                selection = StartingPosition.CENTER;
+
+            } else if (rightCounter == 1) {
+                selection = StartingPosition.RIGHT;
+            } else {
+
+                selection = StartingPosition.NONE;
+            }
+
+            return selection;
         }
-
-        if (leftCounter == 1) {
-            selection = StartingPosition.LEFT;
-
-        } else if (leftCounter == 0 && rightCounter == 0) {
-            selection = StartingPosition.CENTER;
-
-        } else if (rightCounter == 1) {
-            selection = StartingPosition.RIGHT;
-        } else {
-
-            selection = StartingPosition.NONE;
-        }
-
-        return selection;
+        return StartingPosition.NONE;
     }
-
 //    protected double getAvgSaturation(Mat input, Rect rect) {
 //        submat = input.submat(rect);
 //        Scalar color = Core.mean(submat);
@@ -238,4 +241,3 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
     }
 
 }
-
