@@ -41,7 +41,7 @@ public class SampleVisionOpMode extends LinearOpMode {
         rightBack = hardwareMap.get(DcMotor.class, "backRight");
 
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
         rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
         rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
