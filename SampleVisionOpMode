@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.DriveTrain.MecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
 //import CSVisionProcessor;
 
-@Autonomous(name = "VisionOpMode12923", group = "Robot")
+@Autonomous(name = "SampleVisionOpMode129", group = "Robot")
 public class SampleVisionOpMode extends LinearOpMode {
     private DcMotor leftBack = null;
     private DcMotor rightBack = null;
@@ -93,22 +93,4 @@ public class SampleVisionOpMode extends LinearOpMode {
 
     }
 
-
-
-
-
-
 }
-
-
-
-
-
-
-}
-
-
-
-
-
-
