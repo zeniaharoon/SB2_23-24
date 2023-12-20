@@ -31,6 +31,9 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
 
     StartingPosition selection = StartingPosition.NONE;
 
+    Mat b = new Mat();
+    Mat g = new Mat();
+    Mat r = new Mat();
     Mat submat = new Mat();
     Mat hsvMat = new Mat();
 
@@ -93,6 +96,13 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
 
     @Override
     public Object processFrame(Mat frame, long captureTimeNanos) {
+        List<Mat> mats = new ArrayList<Mat>();
+        Core.split(frame, mats);
+        b = mats.get(0);
+        g = mats.get(1);
+        r = mats.get(2);
+        telemetry.addData("Size", b.size());
+        telemetry.update();
         Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
 //
 //        double satRectLeft = getAvgSaturation(hsvMat, rectLeft);
@@ -133,38 +143,67 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
                 max_index = i;
             }
         }
-        double leftTh = 200;
-        double rightTh = 475;
+        double leftTh = 207;
+        double rightTh = 445;
+        double upperTh = 100;
+        double lowerTh = 360;
         int leftCounter = 0;
         int rightCounter = 0;
+        int centerCounter = 0;
 
-        if (max_index < 0) {
-            Rect box = Imgproc.boundingRect(contours.get(max_index));
-
-
-            if ((box.width + box.x) < leftTh) {
-                leftCounter += 1;
-
-            } else if (box.x > rightTh) {
-                rightCounter += 1;
+        for (int i = 0; i < 640; i++) {
+            for (int j = 0; j < 480; j++){
+                if (i > 0 && i < leftTh && j > lowerTh && j < upperTh) {
+                    leftCounter += b.get(i, j)[0];
+                }
+                if (i > leftTh && i < rightTh && j > lowerTh && j < upperTh) {
+                    centerCounter += b.get(i, j)[0];
+                }
+                if (i > rightTh && i < 640 && j > lowerTh && j < upperTh) {
+                    rightCounter += b.get(i, j)[0];
+                }
             }
-
-            if (leftCounter == 1) {
-                selection = StartingPosition.LEFT;
-
-            } else if (leftCounter == 0 && rightCounter == 0) {
-                selection = StartingPosition.CENTER;
-
-            } else if (rightCounter == 1) {
-                selection = StartingPosition.RIGHT;
-            } else {
-
-                selection = StartingPosition.NONE;
-            }
-
+        }
+        if (leftCounter > centerCounter && leftCounter > rightCounter) {
+            selection = StartingPosition.LEFT;
+            return selection;
+        } else if (rightCounter > centerCounter && rightCounter > leftCounter) {
+            selection = StartingPosition.RIGHT;
+            return selection;
+        } else if (centerCounter > leftCounter && centerCounter > rightCounter) {
+            selection = StartingPosition.CENTER;
+            return selection;
+        } else {
+            selection = StartingPosition.NONE;
             return selection;
         }
-        return StartingPosition.NONE;
+//        if (max_index > 0) {
+//            Rect box = Imgproc.boundingRect(contours.get(max_index));
+//
+//
+//            if ((box.width + box.x) < leftTh) {
+//                leftCounter += 1;
+//
+//            } else if (box.x > rightTh) {
+//                rightCounter += 1;
+//            }
+//
+//            if (leftCounter == 1) {
+//                selection = StartingPosition.LEFT;
+//
+//            } else if (leftCounter == 0 && rightCounter == 0) {
+//                selection = StartingPosition.CENTER;
+//
+//            } else if (rightCounter == 1) {
+//                selection = StartingPosition.RIGHT;
+//            } else {
+//
+//                selection = StartingPosition.NONE;
+//            }
+//
+//            return selection;
+//        }
+
     }
 //    protected double getAvgSaturation(Mat input, Rect rect) {
 //        submat = input.submat(rect);
@@ -240,4 +279,7 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         CENTER
     }
 
+
+
 }
+
