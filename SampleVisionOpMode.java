@@ -24,7 +24,7 @@ public class SampleVisionOpMode extends LinearOpMode {
     private DcMotor rightLift = null;
 
     private Servo servoFlip = null;
-    private Servo clawOpen = null;
+//    private Servo clawOpen = null;
     private ElapsedTime runtime = new ElapsedTime();
 
     private CSVisionProcessor visionProcessor;
@@ -32,7 +32,7 @@ public class SampleVisionOpMode extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+//        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
         servoFlip = hardwareMap.get(Servo.class, "servoFlip");
         liftMotor = hardwareMap.get(DcMotor.class, "liftMotor");
         rightFront = hardwareMap.get(DcMotor.class, "frontRight");
@@ -50,6 +50,15 @@ public class SampleVisionOpMode extends LinearOpMode {
         visionProcessor = new CSVisionProcessor(1,1,2,3,4,5,6);
         visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), visionProcessor);
 
+        telemetry.addData("Camera State: ", visionPortal.getCameraState().name());
+        telemetry.update();
+
+        while (visionPortal.getCameraState() == VisionPortal.CameraState.OPENING_CAMERA_DEVICE) {
+
+        }
+        telemetry.addData("Camera State: ", visionPortal.getCameraState().name());
+        telemetry.update();
+
         CSVisionProcessor.StartingPosition startingPos = CSVisionProcessor.StartingPosition.NONE;
         // PSEUDOCODE:
         // lift move up so it is up 90 degrees
@@ -57,8 +66,8 @@ public class SampleVisionOpMode extends LinearOpMode {
         // drive to correct position after detect
         // lift down, claw open
 
-        servoFlip.setPosition(0.2); //fix val!!
-        clawOpen.setPosition(0.1); //fix val!!
+//        servoFlip.setPosition(0.2); //fix val!!
+//        clawOpen.setPosition(0.1); //fix val!!
         waitForStart();
 
         /*
@@ -75,15 +84,15 @@ public class SampleVisionOpMode extends LinearOpMode {
         if(startingPos == CSVisionProcessor.StartingPosition.CENTER) {
             //adjust time
             auto.moveForward(1000, 0.5);
-            clawOpen.setPosition(0.5); //open
+//            clawOpen.setPosition(0.5); //open
         } else if (startingPos == CSVisionProcessor.StartingPosition.RIGHT) {
             auto.moveForward(500, 0.5);
             auto.strafeRight(500,0.5);
-            clawOpen.setPosition(0.5);
+//            clawOpen.setPosition(0.5);
         } else if (startingPos == CSVisionProcessor.StartingPosition.LEFT) {
             auto.moveForward(500, 0.5);
             auto.strafeLeft(500,0.5);
-            clawOpen.setPosition(0.5);
+//            clawOpen.setPosition(0.5);
         } else if (startingPos == CSVisionProcessor.StartingPosition.NONE) {
             // go park
         }
