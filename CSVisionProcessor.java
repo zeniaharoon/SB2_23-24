@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion;
-import org.firstinspires.ftc.robotcore.external.ExportToBlocks;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionProcessor;
 import org.opencv.core.Core;
@@ -21,14 +20,6 @@ import java.util.List;
 
 
 public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionProcessor {
-    //uncomment and determine the correct starting rectangles for your robot (If Using Java or this class directly)
-    private Rect rectLeft;// =
-    // ew Rect(100, 202, 80, 80);
-    private Rect rectMiddle;// = new Rect(200, 202, 80, 80);
-
-    private Rect rectRight;// = new Rect(300, 202, 80, 80);
-
-
     StartingPosition selection = StartingPosition.NONE;
 
     Mat b = new Mat();
@@ -37,40 +28,35 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
     Mat submat = new Mat();
     Mat hsvMat = new Mat();
 
-    private static CSVisionProcessor _csVision;
+    final int leftTh = 207;
+    final int rightTh = 445;
+    final int upperTh = 100;
+    final int lowerTh = 360;
 
-    @ExportToBlocks(
-            comment = "Custom CenterStage Vision Processor",
-            tooltip = "Auto OpMode Vision",
-            parameterLabels = {}
-            //parameterLabels = {"Width", "Left X", "Left Y", "Middle X", "Middle Y", "Right X", "Right Y"}
-    )
-    public static VisionProcessor getCSVision(
-            int width,
-            int leftX, int leftY,
-            int middleX, int middleY,
-            int rightX, int rightY
-    ) {
-        _csVision = new CSVisionProcessor(width, leftX, leftY, middleX, middleY, rightX, rightY);
-        return _csVision;
+    final int width = 640;
+    final int height = 480;
+
+//    private static CSVisionProcessor _csVision;
+
+//    @ExportToBlocks(
+//            comment = "Custom CenterStage Vision Processor",
+//            tooltip = "Auto OpMode Vision",
+//            parameterLabels = {}
+//            //parameterLabels = {"Width", "Left X", "Left Y", "Middle X", "Middle Y", "Right X", "Right Y"}
+//    )
+//    public static VisionProcessor getCSVision(
+//
+//    ) {
+//        _csVision = new CSVisionProcessor();
+//        return _csVision;
+//    }
+
+    public StartingPosition getPosition() {
+        return selection;
     }
 
-    @ExportToBlocks(
-            comment = "Returns the current starting position",
-            tooltip = "Auto OpMode Vision Position"
-
-    )
-    public static StartingPosition getPosition() {
-        return _csVision.getStartingPosition();
-    }
-
-    @ExportToBlocks(
-            comment = "Returns the current starting position as an integer",
-            tooltip = "Auto OpMode Vision Position"
-
-    )
-    public static int getIntPosition() {
-        StartingPosition pos = _csVision.getStartingPosition();
+    public int getIntPosition() {
+        StartingPosition pos = selection;
 
         if (pos == StartingPosition.LEFT) {
             return 1;
@@ -83,10 +69,8 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         return 0;
     }
 
-    public CSVisionProcessor(int width, int leftX, int leftY, int middleX, int middleY, int rightX, int rightY) {
-        rectLeft = new Rect(leftX, leftY, width, width);
-        rectMiddle = new Rect(middleX, middleY, width, width);
-        rectRight = new Rect(rightX, rightY, width, width);
+    public CSVisionProcessor() {
+
     }
 
 
@@ -101,8 +85,8 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         b = mats.get(0);
         g = mats.get(1);
         r = mats.get(2);
-        telemetry.addData("Size", b.size());
-        telemetry.update();
+//        telemetry.addData("Size", b.size());
+//        telemetry.update();
         Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
 //
 //        double satRectLeft = getAvgSaturation(hsvMat, rectLeft);
@@ -143,27 +127,24 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
                 max_index = i;
             }
         }
-        double leftTh = 207;
-        double rightTh = 445;
-        double upperTh = 100;
-        double lowerTh = 360;
+
         int leftCounter = 0;
         int rightCounter = 0;
         int centerCounter = 0;
-
-        for (int i = 0; i < 640; i++) {
-            for (int j = 0; j < 480; j++){
-                if (i > 0 && i < leftTh && j > lowerTh && j < upperTh) {
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (i > 0 && i < leftTh && j > upperTh && j < lowerTh) {
                     leftCounter += b.get(i, j)[0];
                 }
-                if (i > leftTh && i < rightTh && j > lowerTh && j < upperTh) {
+                if (i > leftTh && i < rightTh && j > upperTh && j < lowerTh) {
                     centerCounter += b.get(i, j)[0];
                 }
-                if (i > rightTh && i < 640 && j > lowerTh && j < upperTh) {
+                if (i > rightTh && i < height && j > upperTh && j < lowerTh) {
                     rightCounter += b.get(i, j)[0];
                 }
             }
         }
+
         if (leftCounter > centerCounter && leftCounter > rightCounter) {
             selection = StartingPosition.LEFT;
             return selection;
@@ -235,9 +216,13 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         nonSelected.setStyle(Paint.Style.STROKE);
         nonSelected.setColor(Color.GREEN);
 
-        android.graphics.Rect drawRectangleLeft = makeGraphicsRect(rectLeft, scaleBmpPxToCanvasPx);
-        android.graphics.Rect drawRectangleMiddle = makeGraphicsRect(rectMiddle, scaleBmpPxToCanvasPx);
-        android.graphics.Rect drawRectangleRight = makeGraphicsRect(rectRight, scaleBmpPxToCanvasPx);
+        Rect cl = new Rect(0, upperTh, leftTh, upperTh - lowerTh);
+        Rect cc = new Rect(leftTh, upperTh, rightTh - leftTh, upperTh - lowerTh);
+        Rect cr = new Rect(rightTh, upperTh, width - rightTh, upperTh - lowerTh);
+
+        android.graphics.Rect drawRectangleLeft = makeGraphicsRect(cl, scaleBmpPxToCanvasPx);
+        android.graphics.Rect drawRectangleMiddle = makeGraphicsRect(cc, scaleBmpPxToCanvasPx);
+        android.graphics.Rect drawRectangleRight = makeGraphicsRect(cr, scaleBmpPxToCanvasPx);
 
         selection = (StartingPosition) userContext;
 
@@ -278,7 +263,6 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         RIGHT,
         CENTER
     }
-
 
 
 }
