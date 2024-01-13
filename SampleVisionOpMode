@@ -3,12 +3,10 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.teamcode.DriveTrain.MecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
 //import CSVisionProcessor;
 
@@ -32,35 +30,39 @@ public class SampleVisionOpMode extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
-        servoFlip = hardwareMap.get(Servo.class, "servoFlip");
-        liftMotor = hardwareMap.get(DcMotor.class, "liftMotor");
-        rightFront = hardwareMap.get(DcMotor.class, "frontRight");
-        leftFront = hardwareMap.get(DcMotor.class, "frontLeft");
-        leftBack = hardwareMap.get(DcMotor.class, "backLeft");
-        rightBack = hardwareMap.get(DcMotor.class, "backRight");
-
-
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
-        liftMotor.setDirection(DcMotor.Direction.REVERSE);
-        MecanumDrive auto = new MecanumDrive(leftFront, rightFront, leftBack, rightBack, runtime);
-        visionProcessor = new CSVisionProcessor(1,1,2,3,4,5,6);
+//        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+//        servoFlip = hardwareMap.get(Servo.class, "servoFlip");
+//        liftMotor = hardwareMap.get(DcMotor.class, "liftMotor");
+//        rightFront = hardwareMap.get(DcMotor.class, "frontRight");
+//        leftFront = hardwareMap.get(DcMotor.class, "frontLeft");
+//        leftBack = hardwareMap.get(DcMotor.class, "backLeft");
+//        rightBack = hardwareMap.get(DcMotor.class, "backRight");
+//
+//
+//        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+//        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+//        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+//        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+//        liftMotor.setDirection(DcMotor.Direction.REVERSE);
+//        MecanumDrive auto = new MecanumDrive(leftFront, rightFront, leftBack, rightBack, runtime);
+        visionProcessor = new CSVisionProcessor();
         visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), visionProcessor);
 
-        CSVisionProcessor.StartingPosition startingPos = CSVisionProcessor.StartingPosition.NONE;
+        CSVisionProcessor.StartingPosition startingPos;
+
         // PSEUDOCODE:
         // lift move up so it is up 90 degrees
         // servoFlip up (parallel)
         // drive to correct position after detect
         // lift down, claw open
 
-        servoFlip.setPosition(0.2); //fix val!!
-        clawOpen.setPosition(0.1); //fix val!!
+//        servoFlip.setPosition(0.2); //fix val!!
+//        clawOpen.setPosition(0.1); //fix val!!
         waitForStart();
-
+        while (opModeIsActive()){
+            telemetry.addData("Position: ", visionProcessor.getPosition());
+            telemetry.update();
+        }
         /*
         liftMotor.setPower(0.35);
 
@@ -70,23 +72,23 @@ public class SampleVisionOpMode extends LinearOpMode {
         }
         liftMotor.setPower(0);
         */
-        startingPos = visionProcessor.getStartingPosition();
+//        startingPos = visionProcessor.getStartingPosition();
 
-        if(startingPos == CSVisionProcessor.StartingPosition.CENTER) {
-            //adjust time
-            auto.moveForward(1000, 0.5);
-            clawOpen.setPosition(0.5); //open
-        } else if (startingPos == CSVisionProcessor.StartingPosition.RIGHT) {
-            auto.moveForward(500, 0.5);
-            auto.strafeRight(500,0.5);
-            clawOpen.setPosition(0.5);
-        } else if (startingPos == CSVisionProcessor.StartingPosition.LEFT) {
-            auto.moveForward(500, 0.5);
-            auto.strafeLeft(500,0.5);
-            clawOpen.setPosition(0.5);
-        } else if (startingPos == CSVisionProcessor.StartingPosition.NONE) {
-            // go park
-        }
+//        if(startingPos == CSVisionProcessor.StartingPosition.CENTER) {
+//            //adjust time
+//            auto.moveForward(1000, 0.5);
+//            clawOpen.setPosition(0.5); //open
+//        } else if (startingPos == CSVisionProcessor.StartingPosition.RIGHT) {
+//            auto.moveForward(500, 0.5);
+//            auto.strafeRight(500,0.5);
+//            clawOpen.setPosition(0.5);
+//        } else if (startingPos == CSVisionProcessor.StartingPosition.LEFT) {
+//            auto.moveForward(500, 0.5);
+//            auto.strafeLeft(500,0.5);
+//            clawOpen.setPosition(0.5);
+//        } else if (startingPos == CSVisionProcessor.StartingPosition.NONE) {
+//            // go park
+//        }
         // run until the end of the match (driver presses STOP)
 
         visionPortal.stopStreaming();
