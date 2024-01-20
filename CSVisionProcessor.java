@@ -138,7 +138,7 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
                 if (i > leftTh && i < rightTh && j > upperTh && j < lowerTh) {
                     centerCounter += b.get(i, j)[0];
                 }
-                if (i > rightTh && i < height && j > upperTh && j < lowerTh) {
+                if (j > upperTh && j < lowerTh) {
                     rightCounter += b.get(i, j)[0];
                 }
             }
@@ -269,4 +269,3 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
 
 
 }
-
