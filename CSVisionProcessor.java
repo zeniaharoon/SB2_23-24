@@ -10,7 +10,6 @@ import org.firstinspires.ftc.vision.VisionProcessor;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -28,13 +27,13 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
     Mat submat = new Mat();
     Mat hsvMat = new Mat();
 
-    final int leftTh = 207;
-    final int rightTh = 445;
-    final int upperTh = 100;
-    final int lowerTh = 360;
+    final int leftTh = 425;
+    final int rightTh = 850;
+    final int upperTh = 200;
+    final int lowerTh = 500;
 
-    final int width = 640;
-    final int height = 480;
+    final int width = 1280;
+    final int height = 720;
 
 //    private static CSVisionProcessor _csVision;
 
@@ -192,37 +191,41 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
 //        return color.val[1];
 //    }
 
-    private android.graphics.Rect makeGraphicsRect(Rect rect, float scaleBmpPxToCanvasPx) {
-        int left = Math.round(rect.x * scaleBmpPxToCanvasPx);
-
-        int top = Math.round(rect.y * scaleBmpPxToCanvasPx);
-        int right = left + Math.round(rect.width * scaleBmpPxToCanvasPx);
-
-        int bottom = top + Math.round(rect.height * scaleBmpPxToCanvasPx);
-
-        return new android.graphics.Rect(left, top, right, bottom);
-    }
+//    private android.graphics.Rect makeGraphicsRect(Rect rect, float scaleBmpPxToCanvasPx) {
+//        int left = Math.round(rect.x * scaleBmpPxToCanvasPx);
+//
+//        int top = Math.round(rect.y * scaleBmpPxToCanvasPx);
+//        int right = left + Math.round(rect.width * scaleBmpPxToCanvasPx);
+//
+//        int bottom = top + Math.round(rect.height * scaleBmpPxToCanvasPx);
+//
+//        return new android.graphics.Rect(left, top, right, bottom);
+//    }
 
     @Override
     public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight,
                             float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object userContext) {
         Paint selectedPaint = new Paint();
-        selectedPaint.setColor(Color.RED);
+        selectedPaint.setColor(Color.GREEN);
         selectedPaint.setStyle(Paint.Style.STROKE);
         selectedPaint.setStrokeWidth(scaleCanvasDensity * 4);
 
         Paint nonSelected = new Paint();
         nonSelected.setStrokeWidth(scaleCanvasDensity * 4);
         nonSelected.setStyle(Paint.Style.STROKE);
-        nonSelected.setColor(Color.GREEN);
+        nonSelected.setColor(Color.RED);
 
-        Rect cl = new Rect(0, upperTh, leftTh, upperTh - lowerTh);
-        Rect cc = new Rect(leftTh, upperTh, rightTh - leftTh, upperTh - lowerTh);
-        Rect cr = new Rect(rightTh, upperTh, width - rightTh, upperTh - lowerTh);
+//        Rect cl = new Rect(0, upperTh, leftTh, upperTh - lowerTh);
+//        Rect cc = new Rect(leftTh, upperTh, rightTh - leftTh, upperTh - lowerTh);
+//        Rect cr = new Rect(rightTh, upperTh, width - rightTh, upperTh - lowerTh);
 
-        android.graphics.Rect drawRectangleLeft = makeGraphicsRect(cl, scaleBmpPxToCanvasPx);
-        android.graphics.Rect drawRectangleMiddle = makeGraphicsRect(cc, scaleBmpPxToCanvasPx);
-        android.graphics.Rect drawRectangleRight = makeGraphicsRect(cr, scaleBmpPxToCanvasPx);
+//        android.graphics.Rect drawRectangleLeft = makeGraphicsRect(cl, scaleBmpPxToCanvasPx);
+//        android.graphics.Rect drawRectangleMiddle = makeGraphicsRect(cc, scaleBmpPxToCanvasPx);
+//        android.graphics.Rect drawRectangleRight = makeGraphicsRect(cr, scaleBmpPxToCanvasPx);
+
+        android.graphics.Rect drawRectangleLeft = new android.graphics.Rect(0, upperTh, leftTh, lowerTh);
+        android.graphics.Rect drawRectangleMiddle = new android.graphics.Rect(leftTh, upperTh, rightTh, lowerTh);
+        android.graphics.Rect drawRectangleRight = new android.graphics.Rect(rightTh, upperTh, width, lowerTh);
 
         selection = (StartingPosition) userContext;
 
