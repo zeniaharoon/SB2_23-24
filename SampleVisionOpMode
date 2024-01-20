@@ -51,9 +51,9 @@ public class SampleVisionOpMode extends LinearOpMode {
 //        visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), visionProcessor);
 
         visionPortal = new VisionPortal.Builder()
-        .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-        .addProcessor(visionProcessor)
-        .setCameraResolution(new Size(1280, 720)).build();
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .addProcessor(visionProcessor)
+                .setCameraResolution(new Size(1280, 720)).build();
 
 
         CSVisionProcessor.StartingPosition startingPos;
