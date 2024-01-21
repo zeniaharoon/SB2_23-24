@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,6 +11,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvWebcam;
 //import CSVisionProcessor;
 
 @Autonomous(name = "SampleVisionOpMode129", group = "Robot")
@@ -50,10 +53,14 @@ public class SampleVisionOpMode extends LinearOpMode {
         visionProcessor = new CSVisionProcessor();
 //        visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), visionProcessor);
 
+
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .addProcessor(visionProcessor)
-                .setCameraResolution(new Size(1280, 720)).build();
+                .setCameraResolution(new Size(640, 480))
+                .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
+                .build();
+
 
 
         CSVisionProcessor.StartingPosition startingPos;
@@ -68,7 +75,11 @@ public class SampleVisionOpMode extends LinearOpMode {
 //        clawOpen.setPosition(0.1); //fix val!!
         waitForStart();
         while (opModeIsActive()){
-            telemetry.addData("Position: ", visionProcessor.getPosition());
+            if (visionProcessor.getPosition() == null) {
+                telemetry.addLine("starting pos is null");
+            } else {
+                telemetry.addData("Position: ", visionProcessor.getPosition());
+            }
             telemetry.update();
         }
         /*
