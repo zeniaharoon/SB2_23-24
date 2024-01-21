@@ -1,0 +1,189 @@
+package org.firstinspires.ftc.teamcode;
+
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+@TeleOp(name = "TeleOp1_21_24", group = "Mecanum")
+public class TeleOp1_21_24 extends LinearOpMode {
+    private Servo leftClawOpen = null;
+    private Servo rightClawOpen = null;
+    private Servo servoFlip = null;
+    private Servo actuatorFlip = null;
+    private DcMotor liftMotor;
+    private DcMotor rightFront;
+    private DcMotor leftFront;
+    private DcMotor leftBack;
+    private DcMotor rightBack;
+    private DcMotor actuator;
+    private ElapsedTime runtime = new ElapsedTime();
+    private Lift lift;
+
+    @Override
+    public void runOpMode() {
+        printMessage("Initialized");
+
+        leftClawOpen = hardwareMap.get(Servo.class, "leftClawOpen");
+        rightClawOpen = hardwareMap.get(Servo.class, "rightClawOpen");
+        servoFlip = hardwareMap.get(Servo.class, "servoFlip");
+        actuatorFlip = hardwareMap.get(Servo.class, "actuatorFlip");
+        liftMotor = hardwareMap.get(DcMotor.class, "liftMotor");
+        rightFront = hardwareMap.get(DcMotor.class, "frontRight");
+        leftFront = hardwareMap.get(DcMotor.class, "frontLeft");
+        leftBack = hardwareMap.get(DcMotor.class, "backLeft");
+        rightBack = hardwareMap.get(DcMotor.class, "backRight");
+        actuator = hardwareMap.get(DcMotor.class, "actuator");
+
+        lift = new Lift(liftMotor, runtime, telemetry);
+
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
+
+        double x;
+        double y;
+        double r;
+
+        waitForStart();
+        runtime.reset();
+
+        //clawOpen.setPosition(0);
+
+        while (opModeIsActive()) {
+            double liftPower = 0.7;
+            double actuatorPower = 0.7;
+            y = gamepad1.x?-0.75:gamepad1.b?0.75:0; //turning left and right
+            x = gamepad1.dpad_left?0.75:gamepad1.dpad_right?-0.75:0; //strafe left and right
+            r = gamepad1.dpad_up?0.75:gamepad1.dpad_down?-0.75:0; //strafe forward and backward
+            String message = "";
+            message += x;
+            message += ",";
+            message += y;
+            message += ",";
+            message += r;
+
+            printMessage(message);
+
+            double p1, p2, p3, p4;
+            double maxval;
+
+            p1 = x + y + r;
+            p2 = x + y - r;
+            p3 = x - y - r;
+            p4 = x - y + r;
+
+            maxval = max(abs(p1),abs(p2));
+            maxval = max(maxval,abs(p3));
+            maxval = max(maxval,abs(p4));
+
+            if (maxval > 1) {
+                p1 *= (1/maxval);
+                p2 *= (1/maxval);
+                p3 *= (1/maxval);
+                p4 *= (1/maxval);
+            }
+
+
+            //Joystick Controls (Does everything)
+            leftFront.setPower(p1);
+            rightFront.setPower(p2);
+            leftBack.setPower(p3);
+            rightBack.setPower(p4);
+
+            //telemetry.addData("Status", "Run Time: " + runtime.toString());
+            //telemetry.addData("Flat val", servoFlipFlat);
+            //telemetry.update();
+
+            if (gamepad2.left_bumper && gamepad2.right_bumper){
+                leftClawOpen.setPosition(1);
+                rightClawOpen.setPosition(0.4);
+            }
+            else if (gamepad2.left_bumper) {
+                leftClawOpen.setPosition(0.7);
+            }
+            else if (gamepad2.right_bumper) {
+                rightClawOpen.setPosition(0.7);
+            }
+
+            if (gamepad2.dpad_down){
+                servoFlip.setPosition(0.4);
+                lift.flatStartLift();
+            }
+            else if (gamepad2.dpad_up){
+                lift.backboardLift();
+            }
+            else if (gamepad2.dpad_left){
+                lift.slightlyLift();
+            }
+
+            if(gamepad2.x){
+                rightClawOpen.setPosition(0.4);
+                leftClawOpen.setPosition(1);
+                sleep(250);
+                servoFlip.setPosition(0.7);
+            }
+
+            if(gamepad2.y){
+                servoFlip.setPosition(0.4);
+            }
+            /*if ((gamepad2.left_stick_y>0.1)) {
+                liftMotor.setDirection(DcMotor.Direction.REVERSE);
+                liftMotor.setPower(liftPower);
+                sleep(1);
+                liftMotor.setPower(0);
+
+            }
+            if ((gamepad2.left_stick_y<-0.1)) {
+                liftMotor.setDirection(DcMotor.Direction.FORWARD);
+                liftMotor.setPower(liftPower);
+                sleep(1);
+                liftMotor.setPower(0);
+            }*/
+            if (gamepad1.left_bumper && gamepad1.right_bumper){
+                actuator.setDirection(DcMotor.Direction.REVERSE);
+                actuator.setPower(liftPower);
+                sleep(1000);
+                actuator.setPower(0);
+            }
+            else if (gamepad1.left_bumper){
+                actuator.setDirection(DcMotor.Direction.FORWARD);
+                actuator.setPower(actuatorPower);
+                sleep(1000);
+                actuator.setPower(0);
+            }
+            else if (gamepad1.right_bumper){
+                actuatorFlip.setPosition(0.9);
+            }
+
+        }
+    }
+
+    public void printMessage(String message){
+        telemetry.addData(message, "");
+        telemetry.update();
+    }
+
+}
