@@ -1,3 +1,4 @@
+//This is broken pls fixx <3
 package org.firstinspires.ftc.teamcode;
 
 import android.graphics.Canvas;
@@ -24,16 +25,15 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
     Mat b = new Mat();
     Mat g = new Mat();
     Mat r = new Mat();
-    Mat submat = new Mat();
     Mat hsvMat = new Mat();
 
-    final int leftTh = 425;
-    final int rightTh = 850;
-    final int upperTh = 200;
-    final int lowerTh = 500;
+    final int leftTh = 207;
+    final int rightTh = 445;
+    final int upperTh = 100;
+    final int lowerTh = 360;
 
-    final int width = 1280;
-    final int height = 720;
+    final int width = 640;
+    final int height = 480;
 
 //    private static CSVisionProcessor _csVision;
 
@@ -81,11 +81,14 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
     public Object processFrame(Mat frame, long captureTimeNanos) {
         List<Mat> mats = new ArrayList<Mat>();
         Core.split(frame, mats);
+        //telemetry.addData("mat size cols", mats.get(0).cols());
+        //telemetry.addData("mat size rows", mats.get(0).rows());
+        //telemetry.update();
         b = mats.get(0);
         g = mats.get(1);
         r = mats.get(2);
-//        telemetry.addData("Size", b.size());
-//        telemetry.update();
+        //telemetry.addData("Size", b.size());
+        //telemetry.update();
         Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
 //
 //        double satRectLeft = getAvgSaturation(hsvMat, rectLeft);
@@ -132,13 +135,13 @@ public class CSVisionProcessor extends BlocksOpModeCompanion implements VisionPr
         int centerCounter = 0;
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                if (i > 0 && i < leftTh && j > upperTh && j < lowerTh) {
+                if (i > 0 && i < leftTh && j > upperTh && j < lowerTh && b.get(i,j) != null) {
                     leftCounter += b.get(i, j)[0];
                 }
-                if (i > leftTh && i < rightTh && j > upperTh && j < lowerTh) {
+                else if (i > leftTh && i < rightTh && j > upperTh && j < lowerTh && b.get(i,j) != null) {
                     centerCounter += b.get(i, j)[0];
                 }
-                if (j > upperTh && j < lowerTh) {
+                else if (j > upperTh && j < lowerTh && b.get(i,j) != null) {
                     rightCounter += b.get(i, j)[0];
                 }
             }
