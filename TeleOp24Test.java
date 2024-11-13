@@ -13,44 +13,39 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.DriveTrain.Blinkin;
 
-@TeleOp(name = "TeleOp24Test", group = "Mecanum")
+@TeleOp(name = "TeleOp11_9_24", group = "Mecanum")
 public class TeleOp24Test extends LinearOpMode {
+    private Servo clawOpen = null;
     private DcMotor rightFront;
     private DcMotor leftFront;
     private DcMotor leftBack;
     private DcMotor rightBack;
+    private ColorSensor sensorColor; // Color sensor
+    private RevBlinkinLedDriver blinkinLedDriver; // LED driver
     private ElapsedTime runtime = new ElapsedTime();
-
-    private ColorSensor colorSensor;
-    private RevBlinkinLedDriver blinkinLedDriver;
-    private RevBlinkinLedDriver.BlinkinPattern pattern;
 
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initializing...");
         telemetry.update();
 
-        // Initialize motors
+        // Initialize drivetrain motors
         rightFront = hardwareMap.get(DcMotor.class, "frontRight");
         leftFront = hardwareMap.get(DcMotor.class, "frontLeft");
         leftBack = hardwareMap.get(DcMotor.class, "backLeft");
         rightBack = hardwareMap.get(DcMotor.class, "backRight");
 
-        // Initialize color sensor and Blinkin LED driver
-        colorSensor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
+        // Initialize attachments
+        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+
+        // Initialize the color sensor and LED driver
+        sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
         blinkinLedDriver = hardwareMap.get(RevBlinkinLedDriver.class, "blinkin");
-
-        // Array to store HSV values
-        float hsvValues[] = {0F, 0F, 0F};
-        final float values[] = hsvValues;
-        final double SCALE_FACTOR = 255;
-
-        // Set up layout for changing app background color
-        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
-        final View relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
 
         // Reset and configure encoders
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -68,6 +63,12 @@ public class TeleOp24Test extends LinearOpMode {
         rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
         rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // HSV color scale and RelativeLayout for background color change
+        final float hsvValues[] = {0F, 0F, 0F};
+        final double SCALE_FACTOR = 255;
+        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
+        final View relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -102,31 +103,48 @@ public class TeleOp24Test extends LinearOpMode {
             leftBack.setPower(p3);
             rightBack.setPower(p4);
 
-            // Convert the RGB values to HSV values for color detection
-            Color.RGBToHSV((int) (colorSensor.red() * SCALE_FACTOR),
-                    (int) (colorSensor.green() * SCALE_FACTOR),
-                    (int) (colorSensor.blue() * SCALE_FACTOR),
+            // Convert the RGB values to HSV values
+            Color.RGBToHSV((int) (sensorColor.red() * SCALE_FACTOR),
+                    (int) (sensorColor.green() * SCALE_FACTOR),
+                    (int) (sensorColor.blue() * SCALE_FACTOR),
                     hsvValues);
 
-            // Detect color and set LED pattern accordingly
-            pattern = Blinkin.blinkin(colorSensor);
+            // Update Blinkin LED based on color sensor
+            RevBlinkinLedDriver.BlinkinPattern pattern = Blinkin.blinkin(sensorColor);
             blinkinLedDriver.setPattern(pattern);
 
             // Display telemetry for debugging
             telemetry.addData("Motor Powers", "p1: %.2f, p2: %.2f, p3: %.2f, p4: %.2f", p1, p2, p3, p4);
-            telemetry.addData("Alpha", colorSensor.alpha());
-            telemetry.addData("Red", colorSensor.red());
-            telemetry.addData("Green", colorSensor.green());
-            telemetry.addData("Blue", colorSensor.blue());
+            telemetry.addData("Detected Pattern", pattern.toString());
+            telemetry.addData("Alpha", sensorColor.alpha());
+            telemetry.addData("Red  ", sensorColor.red());
+            telemetry.addData("Green", sensorColor.green());
+            telemetry.addData("Blue ", sensorColor.blue());
             telemetry.addData("Hue", hsvValues[0]);
-            telemetry.addData("Pattern", pattern.toString());
             telemetry.update();
 
-            // Change app background color to match detected color
-            relativeLayout.post(() -> relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, values)));
+            // Change the background color of the screen to match the hue detected by the RGB sensor
+            relativeLayout.post(new Runnable() {
+                public void run() {
+                    relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, hsvValues));
+                }
+            });
         }
 
-        // Set the panel back to the default color after the op mode stops
-        relativeLayout.post(() -> relativeLayout.setBackgroundColor(Color.WHITE));
+        // Reset the screen background color when the op mode ends
+        relativeLayout.post(new Runnable() {
+            public void run() {
+                relativeLayout.setBackgroundColor(Color.WHITE);
+            }
+        });
+
+        if (gamepad2.b) {
+            clawOpen.setPosition(0.5);
+        }
+
+        if (gamepad2.a) {
+            clawOpen.setPosition(1);
+        }
+
     }
 }
