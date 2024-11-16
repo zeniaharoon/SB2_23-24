@@ -18,7 +18,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.DriveTrain.Blinkin;
 
-@TeleOp(name = "TeleOp11_9_24", group = "Mecanum")
+@TeleOp(name = "TeleOp24Test", group = "Mecanum")
 public class TeleOp24Test extends LinearOpMode {
     private Servo clawOpen = null;
     private DcMotor rightFront;
@@ -28,6 +28,8 @@ public class TeleOp24Test extends LinearOpMode {
     private ColorSensor sensorColor; // Color sensor
     private RevBlinkinLedDriver blinkinLedDriver; // LED driver
     private ElapsedTime runtime = new ElapsedTime();
+    private LinearLift2425 lift;
+    private DcMotor liftMotor;
 
     @Override
     public void runOpMode() {
@@ -42,6 +44,8 @@ public class TeleOp24Test extends LinearOpMode {
 
         // Initialize attachments
         clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+        liftMotor = hardwareMap.get(DcMotor.class, "liftMotor");
+        lift = new LinearLift2425(liftMotor, runtime, telemetry);
 
         // Initialize the color sensor and LED driver
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
@@ -138,13 +142,43 @@ public class TeleOp24Test extends LinearOpMode {
             }
         });
 
-        if (gamepad2.b) {
+        /*if (gamepad2.left_bumper) { // change to bumpers
             clawOpen.setPosition(0.5);
         }
 
-        if (gamepad2.a) {
+        if (gamepad2.right_bumper) {
             clawOpen.setPosition(1);
+        }*/
+
+        if (gamepad2.b){
+            //lift.highBasket();
+            liftMotor.setDirection(DcMotor.Direction.REVERSE);
+            liftMotor.setPower(0.5);
+            
+            
         }
+
+        if ((gamepad2.left_stick_y>0.1)) {
+               liftMotor.setDirection(DcMotor.Direction.REVERSE);
+               liftMotor.setPower(0.5);
+               liftMotor.setPower(0);
+
+            }
+
+        if ((gamepad2.left_stick_y<-0.1)) {
+               liftMotor.setDirection(DcMotor.Direction.FORWARD);
+               liftMotor.setPower(0.5);
+               liftMotor.setPower(0);
+            }
+
+        if (gamepad2.a){
+            lift.lowBasket();
+        }
+
+        if (gamepad2.x) {
+            lift.neutral();
+        }
+
 
     }
 }
