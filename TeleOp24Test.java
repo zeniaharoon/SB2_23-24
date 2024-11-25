@@ -18,7 +18,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.DriveTrain.Blinkin;
 
-@TeleOp(name = "TeleOp24Test", group = "Mecanum")
+@TeleOp(name = "TeleOp24Test1", group = "Mecanum")
 public class TeleOp24Test extends LinearOpMode {
     private Servo clawOpen = null;
     private DcMotor rightFront;
@@ -29,7 +29,8 @@ public class TeleOp24Test extends LinearOpMode {
     private RevBlinkinLedDriver blinkinLedDriver; // LED driver
     private ElapsedTime runtime = new ElapsedTime();
     private LinearLift2425 lift;
-    private DcMotor liftMotor;
+    private DcMotor liftMotor1;
+    private DcMotor liftMotor2;
 
     @Override
     public void runOpMode() {
@@ -44,8 +45,9 @@ public class TeleOp24Test extends LinearOpMode {
 
         // Initialize attachments
         clawOpen = hardwareMap.get(Servo.class, "clawOpen");
-        liftMotor = hardwareMap.get(DcMotor.class, "liftMotor");
-        lift = new LinearLift2425(liftMotor, runtime, telemetry);
+        liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
+        liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
+        lift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
 
         // Initialize the color sensor and LED driver
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
@@ -107,6 +109,14 @@ public class TeleOp24Test extends LinearOpMode {
             leftBack.setPower(p3);
             rightBack.setPower(p4);
 
+            if (gamepad2.x) {
+                lift.lowBasket();
+            }
+            if (gamepad2.a){
+                lift.neutral();
+            }
+
+
             // Convert the RGB values to HSV values
             Color.RGBToHSV((int) (sensorColor.red() * SCALE_FACTOR),
                     (int) (sensorColor.green() * SCALE_FACTOR),
@@ -118,7 +128,7 @@ public class TeleOp24Test extends LinearOpMode {
             blinkinLedDriver.setPattern(pattern);
 
             // Display telemetry for debugging
-            telemetry.addData("Motor Powers", "p1: %.2f, p2: %.2f, p3: %.2f, p4: %.2f", p1, p2, p3, p4);
+            //telemetry.addData("Motor Powers", "p1: %.2f, p2: %.2f, p3: %.2f, p4: %.2f", p1, p2, p3, p4);
             telemetry.addData("Detected Pattern", pattern.toString());
             telemetry.addData("Alpha", sensorColor.alpha());
             telemetry.addData("Red  ", sensorColor.red());
@@ -133,52 +143,10 @@ public class TeleOp24Test extends LinearOpMode {
                     relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, hsvValues));
                 }
             });
+
+
         }
-
-        // Reset the screen background color when the op mode ends
-        relativeLayout.post(new Runnable() {
-            public void run() {
-                relativeLayout.setBackgroundColor(Color.WHITE);
-            }
-        });
-
-        /*if (gamepad2.left_bumper) { // change to bumpers
-            clawOpen.setPosition(0.5);
-        }
-
-        if (gamepad2.right_bumper) {
-            clawOpen.setPosition(1);
-        }*/
-
-        if (gamepad2.b){
-            //lift.highBasket();
-            liftMotor.setDirection(DcMotor.Direction.REVERSE);
-            liftMotor.setPower(0.5);
-            
-            
-        }
-
-        if ((gamepad2.left_stick_y>0.1)) {
-               liftMotor.setDirection(DcMotor.Direction.REVERSE);
-               liftMotor.setPower(0.5);
-               liftMotor.setPower(0);
-
-            }
-
-        if ((gamepad2.left_stick_y<-0.1)) {
-               liftMotor.setDirection(DcMotor.Direction.FORWARD);
-               liftMotor.setPower(0.5);
-               liftMotor.setPower(0);
-            }
-
-        if (gamepad2.a){
-            lift.lowBasket();
-        }
-
-        if (gamepad2.x) {
-            lift.neutral();
-        }
-
 
     }
+
 }
