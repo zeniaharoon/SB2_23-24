@@ -29,8 +29,15 @@ public class TeleOp24Test extends LinearOpMode {
     private RevBlinkinLedDriver blinkinLedDriver; // LED driver
     private ElapsedTime runtime = new ElapsedTime();
     private LinearLift2425 lift;
+
+    private FourBarIntake2425 intake2425;
+    private FourBarOutake2425 outake2425;
     private DcMotor liftMotor1;
     private DcMotor liftMotor2;
+
+    private DcMotor liftMotor3;
+
+    private DcMotor liftMotor4;
 
     @Override
     public void runOpMode() {
@@ -48,6 +55,13 @@ public class TeleOp24Test extends LinearOpMode {
         liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
         liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
         lift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
+
+
+        liftMotor3 = hardwareMap.get(DcMotor.class, "i4bar");
+        intake2425 = new FourBarIntake2425(liftMotor3, runtime, telemetry);
+        liftMotor4 = hardwareMap.get(DcMotor.class, "o4bar");
+        outake2425 = new FourBarOutake2425(liftMotor4, runtime, telemetry);
+
 
         // Initialize the color sensor and LED driver
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
@@ -116,6 +130,14 @@ public class TeleOp24Test extends LinearOpMode {
                 lift.neutral();
             }
 
+            if (gamepad2.y) {
+                intake2425.liftI();
+            }
+
+            if(gamepad2.b) {
+                outake2425.liftO();
+            }
+
 
             // Convert the RGB values to HSV values
             Color.RGBToHSV((int) (sensorColor.red() * SCALE_FACTOR),
@@ -129,12 +151,16 @@ public class TeleOp24Test extends LinearOpMode {
 
             // Display telemetry for debugging
             //telemetry.addData("Motor Powers", "p1: %.2f, p2: %.2f, p3: %.2f, p4: %.2f", p1, p2, p3, p4);
-            telemetry.addData("Detected Pattern", pattern.toString());
+            /*telemetry.addData("Detected Pattern", pattern.toString());
             telemetry.addData("Alpha", sensorColor.alpha());
             telemetry.addData("Red  ", sensorColor.red());
             telemetry.addData("Green", sensorColor.green());
             telemetry.addData("Blue ", sensorColor.blue());
             telemetry.addData("Hue", hsvValues[0]);
+            telemetry.update();*/
+
+            telemetry.addData("FourBar Intake position: ", liftMotor3.getCurrentPosition());
+            telemetry.addData("FourBar Intake position: ", liftMotor4.getCurrentPosition());
             telemetry.update();
 
             // Change the background color of the screen to match the hue detected by the RGB sensor
