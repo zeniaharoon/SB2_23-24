@@ -1,0 +1,58 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorControllerEx;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+public class FourBarIntake2425 {
+    private DcMotorEx liftMotor3;
+    private ElapsedTime runtime;
+    private Telemetry telemetry;
+
+    // PIDF Coefficients - adjust these based on your motor and system behavior
+    private static final double P = 5.0;
+    private static final double I = 0.1;
+    private static final double D = 0.2;
+    private static final double F = 0.0;
+
+    public FourBarIntake2425(DcMotor liftMotor3, ElapsedTime runtime, Telemetry telemetry) {
+        this.liftMotor3 = (DcMotorEx) liftMotor3; // Cast to DcMotorEx
+        this.runtime = runtime;
+        this.telemetry = telemetry;
+
+        // Set PIDF coefficients
+        DcMotorControllerEx motorControllerEx = (DcMotorControllerEx) liftMotor3.getController();
+        int motorIndex = liftMotor3.getPortNumber();
+
+        // Set PIDF coefficients only for RUN_USING_ENCODER mode
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, I, D, F);
+        motorControllerEx.setPIDFCoefficients(motorIndex, DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        // Motor setup
+        liftMotor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        liftMotor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        liftMotor3.setDirection(DcMotor.Direction.REVERSE);
+        liftMotor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+    }
+
+    public void liftI(int targetPosition) {
+        liftMotor3.setTargetPosition(targetPosition);
+        if (liftMotor3.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
+            liftMotor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        liftMotor3.setPower(0.5); // Set appropriate power
+    }
+
+
+
+    public void telemetryUpdate() {
+        telemetry.addData("Lift Position", liftMotor3.getCurrentPosition());
+        telemetry.addData("Target Position", liftMotor3.getTargetPosition());
+        telemetry.addData("Motor Power", liftMotor3.getPower());
+        telemetry.update();
+    }
+}
