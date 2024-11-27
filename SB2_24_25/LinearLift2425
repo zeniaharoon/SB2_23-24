@@ -1,0 +1,61 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+public class LinearLift2425 {
+    DcMotor liftMotor1;
+    DcMotor liftMotor2;
+    ElapsedTime runtime;
+    Telemetry telemetry;
+    LinearLift2425(DcMotor liftMotor1, DcMotor liftMotor2, ElapsedTime runtime, Telemetry telemetry){
+        this.liftMotor1 = liftMotor1;
+        this.liftMotor2 = liftMotor2;
+        this.runtime = runtime;
+        this.telemetry = telemetry;
+
+        liftMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        liftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        liftMotor1.setDirection(DcMotorSimple.Direction.FORWARD);
+        liftMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        liftMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        liftMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
+
+    }
+
+    public void highBasket(){
+        liftMotor1.setTargetPosition(1500); //change this
+        liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor1.setPower(0.45);
+        liftMotor2.setTargetPosition(1500); //change this
+        liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor2.setPower(0.45);
+
+
+    }
+
+    public void lowBasket(){
+        liftMotor1.setTargetPosition(2000); //change this
+        liftMotor2.setTargetPosition(2000); //change this
+        liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor1.setPower(0.45);
+        liftMotor2.setPower(0.45);
+        telemetry.addData("Lift position: ", liftMotor1.getCurrentPosition());
+        telemetry.addData("Lift position: ", liftMotor2.getCurrentPosition());
+        telemetry.update();
+
+    }
+
+    public void neutral(){
+        liftMotor1.setTargetPosition(0);
+        liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor1.setPower(0.30); // change this
+        liftMotor2.setTargetPosition(0);
+        liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor2.setPower(0.30); // change this
+    }
+}
