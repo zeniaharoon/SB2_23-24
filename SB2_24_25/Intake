@@ -1,0 +1,33 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.hardware.CRServo;
+
+public class Intake {
+
+    private final CRServo leftServo;
+    private final CRServo rightServo;
+
+    // Constructor to initialize the servos
+    public Intake(CRServo leftServo, CRServo rightServo) {
+        this.leftServo = leftServo;
+        this.rightServo = rightServo;
+    }
+
+    // Move both servos forward (opposite directions)
+    public void in() {
+        leftServo.setPower(1.0); // Full speed forward for left servo
+        rightServo.setPower(-1.0); // Full speed backward for right servo
+    }
+
+    // Move both servos backward (opposite directions)
+    public void out() {
+        leftServo.setPower(-1.0); // Full speed backward for left servo
+        rightServo.setPower(1.0); // Full speed forward for right servo
+    }
+
+    // Stop both servos
+    public void stop() {
+        leftServo.setPower(0); // Neutral position for left servo
+        rightServo.setPower(0); // Neutral position for right servo
+    }
+}
