@@ -21,6 +21,7 @@ import org.firstinspires.ftc.teamcode.DriveTrain.Blinkin;
 @TeleOp(name = "TeleOp24Test1", group = "Mecanum")
 public class TeleOp24Test extends LinearOpMode {
     private Servo clawOpen = null;
+    private Servo barServo = null;
     private DcMotor rightFront;
     private DcMotor leftFront;
     private DcMotor leftBack;
@@ -52,6 +53,7 @@ public class TeleOp24Test extends LinearOpMode {
 
         // Initialize attachments
         clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+        barServo = hardwareMap.get(Servo.class, "4barServo");
         liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
         liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
         lift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
@@ -98,7 +100,7 @@ public class TeleOp24Test extends LinearOpMode {
 
         while (opModeIsActive()) {
             // Read joystick values
-            double y = -gamepad1.left_stick_y;  // Forward/backward (inverted for forward)
+            double y = gamepad1.left_stick_y;  // Forward/backward (inverted for forward)
             double x = -gamepad1.left_stick_x;   // Side-to-side (strafe)
             double r = -gamepad1.right_stick_x;  // Rotation
 
@@ -130,12 +132,19 @@ public class TeleOp24Test extends LinearOpMode {
                 lift.neutral();
             }
 
-            if (gamepad2.y) {
-                intake2425.liftI();
+            intake2425.liftI();
+
+            if (gamepad2.y){
+                intake2425.targetPosition = 60;
+            }
+            outake2425.liftO();
+
+            if (gamepad2.b){
+                outake2425.targetPosition = 105; //change this value
             }
 
-            if(gamepad2.b) {
-                outake2425.liftO();
+            if(gamepad1.a){
+                barServo.setPosition(0); // set servo position to 0
             }
 
 
@@ -159,9 +168,12 @@ public class TeleOp24Test extends LinearOpMode {
             telemetry.addData("Hue", hsvValues[0]);
             telemetry.update();*/
 
-            telemetry.addData("FourBar Intake position: ", liftMotor3.getCurrentPosition());
-            telemetry.addData("FourBar Intake position: ", liftMotor4.getCurrentPosition());
-            telemetry.update();
+
+
+
+            /*telemetry.addData("Lift position (motor 1): ", liftMotor1.getCurrentPosition());
+            telemetry.addData("Lift position (motor 2): ", liftMotor2.getCurrentPosition());
+            telemetry.update();*/
 
             // Change the background color of the screen to match the hue detected by the RGB sensor
             relativeLayout.post(new Runnable() {
