@@ -1,34 +1,121 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+@Config
 public class FourBarOutake2425 {
-    DcMotor liftMotor4;
-    ElapsedTime runtime;
-    Telemetry telemetry;
-    FourBarOutake2425(DcMotor liftMotor4, ElapsedTime runtime, Telemetry telemetry){
-        this.liftMotor4 = liftMotor4;
+    public double targetPosition = 0;
+    private DcMotorEx liftMotor4;
+    private ElapsedTime runtime;
+    private Telemetry telemetry;
+
+    // PID coefficients
+    public static double P = 0.05;
+    public static double I = 0.0;
+    public static double D = 0.005;
+    public static double F = 0.0;
+
+    // Gravity compensation
+    private static final double Kg = 0.1; // Adjust based on the system
+
+    // State variables
+    private double cumulativeError = 0.0;
+    private double previousError = 0.0;
+    private double lastTime = 0.0;
+    public int currentPosition;
+    public double error;
+
+    // Arrays for logging data (for later graphing)
+    private double[] timeArray = new double[100]; // Adjust size as needed
+    private double[] errorArray = new double[100];
+    private double[] motorPowerArray = new double[100];
+    private int index = 0;
+    public FtcDashboard ftcDashboard;
+
+    public FourBarOutake2425(DcMotor liftMotor4, ElapsedTime runtime, Telemetry telemetry) {
+        this.liftMotor4 = (DcMotorEx) liftMotor4; // Cast to DcMotorEx
         this.runtime = runtime;
-        this.telemetry = telemetry;
+        this.ftcDashboard = FtcDashboard.getInstance();
+        this.telemetry = ftcDashboard.getTelemetry();
 
+        // Motor setup
         liftMotor4.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        liftMotor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        liftMotor4.setDirection(DcMotorSimple.Direction.REVERSE);
+        liftMotor4.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        liftMotor4.setDirection(DcMotor.Direction.REVERSE);
+        liftMotor4.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        lastTime = runtime.seconds(); // Initialize the timer
     }
 
+    public void liftO() {
+        // Get current position and calculate error
+        currentPosition = liftMotor4.getCurrentPosition(); //encoder ticks
+        error = targetPosition - currentPosition;
 
-    public void liftO(){
-        liftMotor4.setTargetPosition(90);
-        liftMotor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor4.setPower(0.1);
+        // Calculate deltaTime
+        double currentTime = runtime.seconds();
+        double deltaTime = currentTime - lastTime;
 
-        telemetry.addData("FourBar Outtake position: ", liftMotor4.getCurrentPosition());
+        // Update cumulative error for integral term
+        cumulativeError += error * deltaTime;
+
+        // Derivative term: change in error over time
+        double derivative = (error - previousError) / deltaTime;
+
+        // Feedforward for gravity compensation
+        double feedforward = F;
+
+        // Calculate motor power
+        double motorPower = (P * error) + (I * cumulativeError) + (D * derivative) + feedforward;
+
+        // Limit power to the motor's acceptable range [-1, 1]
+        motorPower = Math.max(-1, Math.min(1, motorPower));
+
+        // Set motor power
+        liftMotor4.setPower(motorPower);
+
+        // Log data for graphing
+        if (index < timeArray.length) {
+            timeArray[index] = currentTime; // Log the current time
+            errorArray[index] = error; // Log the current error
+            motorPowerArray[index] = motorPower; // Log the motor power
+            index++;
+        }
+
+
+        // Update state variables
+        previousError = error;
+        lastTime = currentTime;
+
+        telemetryUpdate();
+    }
+
+    public void telemetryUpdate() {
+        // Telemetry for debugging
+        telemetry.addData("Current Position", currentPosition);
+        telemetry.addData("Error", error);
+        telemetry.addData("Motor Power", liftMotor4.getPower());
+        telemetry.addData("Target Position", targetPosition);
+        telemetry.addData("Cumulative Error", cumulativeError);
         telemetry.update();
+    }
 
+    // Method to retrieve logged data (for external use like CSV or visualization)
+    public double[] getTimeData() {
+        return timeArray;
+    }
+
+    public double[] getErrorData() {
+        return errorArray;
+    }
+
+    public double[] getMotorPowerData() {
+        return motorPowerArray;
     }
 }
