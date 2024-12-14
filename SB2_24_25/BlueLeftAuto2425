@@ -1,0 +1,140 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.DriveTrain.MecanumDrive;
+
+@Autonomous(name="BlueLeftAuto2425", group= "Robot")
+public class BlueLeftAuto2425 extends LinearOpMode {
+
+    /* Declare OpMode members. */
+    private DcMotor leftBack;
+    private DcMotor rightBack;
+    private DcMotor leftFront;
+    private DcMotor rightFront;
+    private LinearLift2425 lift;
+    private DcMotor liftMotor1;
+    private DcMotor liftMotor2;
+    private Servo barServo;
+
+    private ElapsedTime runtime = new ElapsedTime();
+
+
+    @Override
+    public void runOpMode() {
+        rightFront = hardwareMap.get(DcMotor.class, "frontRight");
+        leftFront = hardwareMap.get(DcMotor.class, "frontLeft");
+        leftBack = hardwareMap.get(DcMotor.class, "backLeft");
+        rightBack = hardwareMap.get(DcMotor.class, "backRight");
+        liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
+        liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
+        barServo = hardwareMap.get(Servo.class, "4barServo");
+        lift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
+
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+
+
+        MecanumDrive auto = new MecanumDrive(leftFront, rightFront, leftBack, rightBack, runtime, telemetry, this);
+
+
+        waitForStart();
+
+       //place on high rung
+        //
+
+        //
+        auto.DriveDistance("left", 0.5, 12);
+        auto.resetWheels();
+        auto.DriveDistance("backward", 0.5, 28);
+        auto.resetWheels();
+        lift.highRung();
+        auto.DriveDistance("backward", 0.3, 4);
+        lift.unfreezeLift();
+        lift.neutral();
+        auto.resetWheels();
+        auto.DriveDistance("forward", 0.3, 14);
+        auto.resetWheels();
+        // strafe to park
+
+        //high basket 1st cycle
+        /*auto.DriveDistance("right", 0.3, 36); //change if needed
+        auto.resetWheels();
+        auto.DriveDistance("backward",0.3,48);
+        auto.resetWheels();
+        auto.turnClockwise(1000,0.3); //90 degrees
+        auto.resetWheels();
+        auto.DriveDistance("backward", 0.3, 30);
+        auto.turnCounterClockwise(1600, 0.3); // spin 180 degrees, test w intake
+        auto.resetWheels();
+        auto.DriveDistance("forward", 0.3,7);
+        auto.resetWheels();
+        //intake
+        //hand off
+        auto.turnClockwise(375, 0.3);
+        auto.resetWheels();
+        auto.DriveDistance("backward", 0.3, 12); // measure value, go back towards the basket
+        auto.resetWheels();*/
+//        auto.DriveDistance("left",0.3,2);
+//        auto.resetWheels();
+//        //lift.unfreezeLift();
+//        //lift.highBasket();
+//        auto.DriveDistance("forward", 0.3,4);
+//        auto.resetWheels();
+//        //lift.unfreezeLift();
+//        //lift.lowBasket();
+//        // outtake
+//        //go to park
+//        auto.DriveDistance("forward", 0.3,20);
+//        auto.resetWheels();
+//        auto.turnCounterClockwise(2000,0.3); // change value
+//        auto.resetWheels();
+//        //auto.DriveDistance("right",0.3,48);
+//        //auto.resetWheels();
+//        //auto.DriveDistance("backward",0.3,20);
+//        //auto.resetWheels();
+/*
+        //go to park
+
+          auto.turnClockwise(1000, 0.3);
+        auto.resetWheels();
+        lift.unfreezeLift();
+        lift.highRung();
+        auto.DriveDistance("right", 0.5, 50);
+        auto.resetWheels();
+        auto.DriveDistance("forward", 0.3, 25);
+        auto.resetWheels();*/
+
+
+
+        // strafe right
+        // turn clockwise 90
+        // strafe right
+        // move forward
+        // lift high rung
+
+
+
+
+
+    }
+}
