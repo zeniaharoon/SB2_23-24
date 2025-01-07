@@ -1,0 +1,533 @@
+package org.firstinspires.ftc.teamcode.DriveTrain;
+
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+public class MecanumDrive extends driveTrain {
+    private static final double WHEEL_DIAMETER_MM = 96; // diameter of the wheel in mm
+    private static final double TICKS_PER_REVOLUTION = 537.6; // encoder ticks per revolution
+    private static final double MM_PER_INCH = 25.4; // conversion factor from inches to mm
+    private static final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER_MM * Math.PI; // circumference in mm
+    private static final double TICKS_PER_MM = TICKS_PER_REVOLUTION / WHEEL_CIRCUMFERENCE; // ticks per mm
+    private static final double TICKS_PER_INCH = TICKS_PER_MM * MM_PER_INCH; // ticks per inch
+
+    public MecanumDrive(DcMotor leftFront, DcMotor rightFront, DcMotor leftBack, DcMotor rightBack, ElapsedTime runtime, Telemetry telemetry, LinearOpMode opMode) {
+        super(leftFront, rightFront, leftBack, rightBack, runtime, telemetry, opMode);
+    }
+
+
+    public void turnCounterClockwise(int encoderTicks, double power) {
+        double p1, p2, p3, p4;
+        double maxval;
+        double y;
+        double x;
+        double r;
+        y = power;
+        x = 0;
+        r = 0;
+        p1 = x + y + r;
+        p2 = x - y - r;
+        p3 = x + y - r;
+        p4 = x - y + r;
+
+        maxval = max(abs(p1), abs(p2));
+        maxval = max(maxval, abs(p3));
+        maxval = max(maxval, abs(p4));
+
+        if (maxval > 1) {
+            p1 *= (1 / maxval);
+            p2 *= (1 / maxval);
+            p3 *= (1 / maxval);
+            p4 *= (1 / maxval);
+        }
+
+
+        //Joystick Controls (Does everything)
+        leftFront.setPower(p1);
+        rightFront.setPower(p2);
+        leftBack.setPower(p3);
+        rightBack.setPower(p4);
+        double startTime = runtime.milliseconds();
+        while (Math.abs(leftFront.getCurrentPosition()) < encoderTicks && opMode.opModeIsActive()) {
+            telemetry.addData("encoder ticks", leftFront.getCurrentPosition());
+            telemetry.addData("p1", p1);
+            telemetry.addData("p2", p2);
+            telemetry.addData("p3", p3);
+            telemetry.addData("p4", p4);
+            telemetry.update();
+        }
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+    }
+
+    @Override
+    public void turnClockwise(int encoderTicks, double power) {
+        double p1, p2, p3, p4;
+        double maxval;
+        double y;
+        double x;
+        double r;
+
+        // Correct rotational component for clockwise turn
+        y = -power;
+        x = 0;
+        r = 0;
+
+        // Calculate motor power values for rotation
+        p1 = x + y - r;
+        p2 = x - y - r;
+        p3 = x + y + r;
+        p4 = x - y + r;
+
+
+        // Normalize motor powers to keep within [-1, 1] range
+        maxval = max(abs(p1), abs(p2));
+        maxval = max(maxval, abs(p3));
+        maxval = max(maxval, abs(p4));
+
+        if (maxval > 1) {
+            p1 *= (1 / maxval);
+            p2 *= (1 / maxval);
+            p3 *= (1 / maxval);
+            p4 *= (1 / maxval);
+        }
+
+        // Set motor powers
+        leftFront.setPower(p1);
+        rightFront.setPower(p2);
+        leftBack.setPower(p3);
+        rightBack.setPower(p4);
+
+        // Run motors until encoder ticks are reached
+        while (Math.abs(leftFront.getCurrentPosition()) < encoderTicks && opMode.opModeIsActive()) {
+            telemetry.addData("encoder ticks", leftFront.getCurrentPosition());
+            telemetry.addData("p1", p1);
+            telemetry.addData("p2", p2);
+            telemetry.addData("p3", p3);
+            telemetry.addData("p4", p4);
+            telemetry.update();
+        }
+
+        // Stop all motors after rotation is complete
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+    }
+
+
+
+
+    @Override
+    public void strafeLeft(int encoderTicks, double power) {
+        double p1, p2, p3, p4;
+        double maxval;
+        double y;
+        double x;
+        double r;
+        y = 0;
+        x = 0;
+        r = -power;
+        p1 = x + y + r;
+        p2 = x - y - r;
+        p3 = x + y - r;
+        p4 = x - y + r;
+
+
+        maxval = max(abs(p1), abs(p2));
+        maxval = max(maxval, abs(p3));
+        maxval = max(maxval, abs(p4));
+
+        if (maxval > 1) {
+            p1 *= (1 / maxval);
+            p2 *= (1 / maxval);
+            p3 *= (1 / maxval);
+            p4 *= (1 / maxval);
+        }
+
+
+        //Joystick Controls (Does everything)
+        leftFront.setPower(p1);
+        rightFront.setPower(p2);
+        leftBack.setPower(p3);
+        rightBack.setPower(p4);
+        double startTime = runtime.milliseconds();
+        double startPosition = leftFront.getCurrentPosition();
+        double threshold = 50;
+        double error = leftFront.getCurrentPosition() - startPosition;
+        double kp = 0.5;
+        double effort;
+        while (Math.abs(error) - encoderTicks < threshold && opMode.opModeIsActive()) {
+            error = error/encoderTicks;
+            effort = kp * error;
+            if(effort < 0) {
+                resetWheels();
+                leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+                rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+                leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+                rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
+                leftFront.setPower(Math.abs(effort));
+                rightFront.setPower(Math.abs(effort));
+                leftBack.setPower(Math.abs(effort));
+                rightBack.setPower(Math.abs(effort));
+
+            }else {
+                resetWheels();
+                leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+                rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+                leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+                rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+
+                leftFront.setPower(effort);
+                rightFront.setPower(effort);
+                leftBack.setPower(effort);
+                rightBack.setPower(effort);
+            }
+            telemetry.addData("encoder ticks", leftFront.getCurrentPosition());
+            telemetry.addData("p1", p1);
+            telemetry.addData("p2", p2);
+            telemetry.addData("p3", p3);
+            telemetry.addData("p4", p4);
+            telemetry.update();
+        }
+
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+
+    }
+
+    @Override
+    public void strafeRight(int encoderTicks, double power) {
+        double p1, p2, p3, p4;
+        double maxval;
+        double y;
+        double x;
+        double r;
+        y = 0;
+        x = 0;
+        r = power;
+        p1 = x + y + r;
+        p2 = x - y - r;
+        p3 = x + y - r;
+        p4 = x - y + r;
+
+        maxval = max(abs(p1), abs(p2));
+        maxval = max(maxval, abs(p3));
+        maxval = max(maxval, abs(p4));
+
+        if (maxval > 1) {
+            p1 *= (1 / maxval);
+            p2 *= (1 / maxval);
+            p3 *= (1 / maxval);
+            p4 *= (1 / maxval);
+        }
+
+
+        //Joystick Controls (Does everything)
+        leftFront.setPower(p1);
+        rightFront.setPower(p2);
+        leftBack.setPower(p3);
+        rightBack.setPower(p4);
+        double startTime = runtime.milliseconds();
+        while (Math.abs(leftFront.getCurrentPosition()) < encoderTicks && opMode.opModeIsActive()) {
+            telemetry.addData("encoder ticks", leftFront.getCurrentPosition());
+            telemetry.addData("p1", p1);
+            telemetry.addData("p2", p2);
+            telemetry.addData("p3", p3);
+            telemetry.addData("p4", p4);
+            telemetry.update();
+        }
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+
+    }
+
+    @Override
+    public void moveBackward(int encoderTicks, double power) {
+        double p1, p2, p3, p4;
+        double maxval;
+        double y;
+        double x;
+        double r;
+        y = 0;
+        x = -power;
+        r = 0;
+        p1 = x + y + r;
+        p2 = x - y - r;
+        p3 = x + y - r;
+        p4 = x - y + r;
+
+        maxval = max(abs(p1), abs(p2));
+        maxval = max(maxval, abs(p3));
+        maxval = max(maxval, abs(p4));
+
+        if (maxval > 1) {
+            p1 *= (1 / maxval);
+            p2 *= (1 / maxval);
+            p3 *= (1 / maxval);
+            p4 *= (1 / maxval);
+        }
+
+
+        //Joystick Controls (Does everything)
+        leftFront.setPower(p1);
+        rightFront.setPower(p2);
+        leftBack.setPower(p3);
+        rightBack.setPower(p4);
+        double startTime = runtime.milliseconds();
+        while (Math.abs(leftFront.getCurrentPosition()) < encoderTicks && opMode.opModeIsActive()) {
+            telemetry.addData("encoder ticks", leftFront.getCurrentPosition());
+            telemetry.addData("p1", p1);
+            telemetry.addData("p2", p2);
+            telemetry.addData("p3", p3);
+            telemetry.addData("p4", p4);
+            telemetry.update();
+        }
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+    }
+
+    @Override
+    public void moveForward(int encoderTicks, double power) {
+        double p1, p2, p3, p4;
+        double maxval;
+        double y;
+        double x;
+        double r;
+        y = 0;
+        x = power;
+        r = 0;
+        p1 = x + y + r;
+        p2 = x - y - r;
+        p3 = x + y - r;
+        p4 = x - y + r;
+
+        maxval = max(abs(p1), abs(p2));
+        maxval = max(maxval, abs(p3));
+        maxval = max(maxval, abs(p4));
+
+        if (maxval > 1) {
+            p1 *= (1 / maxval);
+            p2 *= (1 / maxval);
+            p3 *= (1 / maxval);
+            p4 *= (1 / maxval);
+        }
+
+
+        //Joystick Controls (Does everything)
+        leftFront.setPower(p1);
+        rightFront.setPower(p2);
+        leftBack.setPower(p3);
+        rightBack.setPower(p4);
+        double startTime = runtime.milliseconds();
+        while (Math.abs(leftFront.getCurrentPosition()) < encoderTicks && opMode.opModeIsActive()) {
+            telemetry.addData("encoder ticks", leftFront.getCurrentPosition());
+            telemetry.addData("p1", p1);
+            telemetry.addData("p2", p2);
+            telemetry.addData("p3", p3);
+            telemetry.addData("p4", p4);
+            telemetry.update();
+        }
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+
+    }
+
+
+    public void resetWheels() {
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
+    /*public void DriveForwardDistance(double power, double distanceInInches) {
+        // Calculate the target encoder ticks
+
+        int targetTicks = (int) (distanceInInches * TICKS_PER_INCH);
+
+        // Reset encoders
+        resetWheels();
+        // Set target position for all motors
+        leftFront.setTargetPosition(targetTicks);
+        rightFront.setTargetPosition(targetTicks);
+        leftBack.setTargetPosition(targetTicks);
+        rightBack.setTargetPosition(targetTicks);
+
+        // Set motors to run to position
+        leftFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftBack.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightBack.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // Set power
+        leftFront.setPower(power);
+        rightFront.setPower(power);
+        leftBack.setPower(power);
+        rightBack.setPower(power);
+
+        // Wait until the motors reach the target position
+        while (opMode.opModeIsActive() &&
+                (leftFront.isBusy() || rightFront.isBusy() || leftBack.isBusy() || rightBack.isBusy())) {
+            telemetry.addData("Target Ticks", targetTicks);
+            telemetry.addData("Left Front Ticks", leftFront.getCurrentPosition());
+            telemetry.addData("Right Front Ticks", rightFront.getCurrentPosition());
+            telemetry.addData("Left Back Ticks", leftBack.getCurrentPosition());
+            telemetry.addData("Right Back Ticks", rightBack.getCurrentPosition());
+            telemetry.update();
+        }
+
+        // Stop the motors
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+
+        // Reset to RUN_USING_ENCODER mode
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }*/
+
+
+    private enum Direction {
+        FORWARD,
+        BACKWARD,
+        LEFT,
+        RIGHT;
+
+        // This method can help translate a string input to the Direction enum.
+        public static Direction fromString(String direction) {
+            try {
+                return Direction.valueOf(direction.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return null; // Return null if the direction string is invalid
+            }
+        }
+    }
+
+    public void DriveDistance(String direction, double power, double distanceInInches) {
+        int targetTicks = (int) (distanceInInches * TICKS_PER_INCH);
+
+        resetWheels();
+
+        Direction dir = Direction.fromString(direction);
+
+        if (dir == null) {
+            telemetry.addData("Error", "Invalid direction");
+            telemetry.update();
+            return; // Exit if direction is invalid
+        }
+
+        // Set motor positions based on direction
+        switch (dir) {
+            case BACKWARD:
+                setTargetPositions(targetTicks);
+                break;
+
+            case FORWARD:
+                setTargetPositions(-targetTicks);
+                break;
+
+            case RIGHT:
+                setStrafingTargetPositions(targetTicks);
+                break;
+
+            case LEFT:
+                setStrafingTargetPositions(-targetTicks);
+                break;
+        }
+
+        // Set motors to run to position
+        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // Set motor power
+        setMotorPower(power);
+
+        // Wait until the motors reach the target position
+        while (opMode.opModeIsActive() &&
+                (leftFront.isBusy() || rightFront.isBusy() || leftBack.isBusy() || rightBack.isBusy())) {
+            telemetry.addData("Direction", direction);
+            telemetry.addData("Target Ticks", targetTicks);
+            telemetry.addData("Left Front Ticks", leftFront.getCurrentPosition());
+            telemetry.addData("Right Front Ticks", rightFront.getCurrentPosition());
+            telemetry.addData("Left Back Ticks", leftBack.getCurrentPosition());
+            telemetry.addData("Right Back Ticks", rightBack.getCurrentPosition());
+            telemetry.update();
+        }
+
+        // Stop the motors
+        stopMotors();
+
+        // Reset to RUN_USING_ENCODER mode
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    private void setTargetPositions(int targetTicks) {
+        leftFront.setTargetPosition(targetTicks);
+        rightFront.setTargetPosition(targetTicks);
+        leftBack.setTargetPosition(targetTicks);
+        rightBack.setTargetPosition(targetTicks);
+    }
+
+    private void setStrafingTargetPositions(int targetTicks) {
+        leftFront.setTargetPosition(-targetTicks);
+        rightFront.setTargetPosition(targetTicks);
+        leftBack.setTargetPosition(targetTicks);
+        rightBack.setTargetPosition(-targetTicks);
+    }
+
+    private void setMotorModes(DcMotor.RunMode mode) {
+        leftFront.setMode(mode);
+        rightFront.setMode(mode);
+        leftBack.setMode(mode);
+        rightBack.setMode(mode);
+    }
+
+    private void setMotorPower(double power) {
+        leftFront.setPower(power);
+        rightFront.setPower(power);
+        leftBack.setPower(power);
+        rightBack.setPower(power);
+    }
+
+    private void stopMotors() {
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+    }
+
+
+
+
+}
