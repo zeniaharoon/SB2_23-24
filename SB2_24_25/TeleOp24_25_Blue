@@ -9,10 +9,13 @@ import android.view.View;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
@@ -24,6 +27,10 @@ public class TeleOp24_25_Blue extends LinearOpMode {
     private DcMotor rightBack;
     private ElapsedTime runtime = new ElapsedTime();
     private LinearLift2425 lift;
+    private Servo clawOpen;
+
+    private Servo rotateClaw;
+    private double rotateClawPosition;
     public FtcDashboard ftcDashboard;
 
     private boolean debug = true;
@@ -32,12 +39,17 @@ public class TeleOp24_25_Blue extends LinearOpMode {
     private DcMotor liftMotor1;
     private DcMotor liftMotor2;
 
+    private DcMotorEx liftMotor;
+    private PIDF_Arm pidfArm;
+
+    //private DcMotor liftMotor4;
 
     @Override
     public void runOpMode() {
 
         this.ftcDashboard = FtcDashboard.getInstance();
-        this.telemetry = ftcDashboard.getTelemetry();
+        this.telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
 
         telemetry.addData("Status", "Initializing...");
         telemetry.update();
@@ -52,6 +64,18 @@ public class TeleOp24_25_Blue extends LinearOpMode {
         liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
         liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
         lift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
+
+        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+
+        rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
+
+        //liftMotor4 = hardwareMap.get(DcMotor.class, "liftMotor4");
+        //outake2425 = new FourBarOutake2425(liftMotor4, runtime, telemetry);
+        liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
+        pidfArm = new PIDF_Arm(liftMotor, new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry()));
+        liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
 
 
         // Reset and configure encoders
@@ -71,6 +95,7 @@ public class TeleOp24_25_Blue extends LinearOpMode {
         leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
         rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
+
         // HSV color scale and RelativeLayout for background color change
         final float hsvValues[] = {0F, 0F, 0F};
         final double SCALE_FACTOR = 255;
@@ -82,6 +107,10 @@ public class TeleOp24_25_Blue extends LinearOpMode {
 
         waitForStart();
         runtime.reset();
+
+        pidfArm.setTarget(liftMotor.getCurrentPosition());
+        pidfArm.update();
+        //rotateClaw.setPosition(rotateClawPosition);
 
         while (opModeIsActive()) {
             // Read joystick values
@@ -113,9 +142,7 @@ public class TeleOp24_25_Blue extends LinearOpMode {
             if (gamepad2.x) {
                 lift.lowBasket();
             }
-           /* if (gamepad2.a){
-                lift.neutral();
-            }*/
+
 
 
 
@@ -127,18 +154,61 @@ public class TeleOp24_25_Blue extends LinearOpMode {
 
 
 
-            /*if (gamepad1.a){
-                barServo.setPosition(0); // set servo position to 0
-            }*/
 
 
-            if(gamepad1.a) {
+            if(gamepad2.a) {
                 lift.highRung();
             }
 
-            if(gamepad1.b) {
+            if(gamepad2.b) {
                 lift.neutral();
             }
+
+
+            if (gamepad2.dpad_down) {
+                pidfArm.setTarget(100);
+                // Example target position
+            }
+            if (gamepad2.dpad_up) {
+                pidfArm.setTarget(200); // Another target position
+            }
+
+            // Update PID control for arm
+            pidfArm.update();
+
+            telemetry.addData("Arm Current Position", liftMotor.getCurrentPosition());
+            telemetry.addData("Arm Target Position", PIDF_Arm.target);
+            telemetry.update();
+
+
+            //open
+            if (gamepad2.left_bumper) {
+                clawOpen.setPosition(0.9);
+            }
+
+            //close
+            if (gamepad2.right_bumper) {
+                clawOpen.setPosition(0.0);
+            }
+
+            double joystickInput = -gamepad2.left_stick_y; // Inverted because up is negative
+            double increment = joystickInput * 0.01; // Scale the joystick input for finer control
+
+            rotateClawPosition += increment; // Adjust the position
+            rotateClawPosition = Math.max(0.0, Math.min(1.0, rotateClawPosition)); // Clamp to [0.0, 1.0]
+            rotateClaw.setPosition(rotateClawPosition); // Set the servo position
+
+            // Control linear slides with gamepad2 right stick Y-axis
+            double slidePower = -gamepad2.right_stick_y; // Negative to match control direction
+            liftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            liftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            liftMotor1.setPower(slidePower);
+            liftMotor2.setPower(slidePower);
+
+
+
+            // Push telemetry to the dashboard
+            telemetry.update();
 
 
             relativeLayout.post(new Runnable() {
