@@ -11,7 +11,24 @@ public class LinearLift2425 {
     DcMotor liftMotor2;
     ElapsedTime runtime;
     Telemetry telemetry;
-    LinearLift2425(DcMotor liftMotor1, DcMotor liftMotor2, ElapsedTime runtime, Telemetry telemetry){
+
+    // Constants
+    private static final double TICKS_PER_REV = 537.6; // Example for GoBilda 5202 motor
+    private static final double LEAD_SCREW_PITCH = 4.72441; // Inches per revolution
+    private static final double TICKS_PER_INCH = TICKS_PER_REV / LEAD_SCREW_PITCH;
+
+    private double holdingPower = 0.1; // Power to hold the lift in place
+    private boolean isFrozen = false; // Flag to check if the lift should be frozen
+
+    // State variables
+    private double cumulativeError = 0.0;
+    private double previousError = 0.0;
+    private double lastTime = 0.0;
+    public int currentPosition;
+    public double error;
+
+
+    LinearLift2425(DcMotor liftMotor1, DcMotor liftMotor2, ElapsedTime runtime, Telemetry telemetry) {
         this.liftMotor1 = liftMotor1;
         this.liftMotor2 = liftMotor2;
         this.runtime = runtime;
@@ -20,42 +37,80 @@ public class LinearLift2425 {
         liftMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         liftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         liftMotor1.setDirection(DcMotorSimple.Direction.FORWARD);
+        liftMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         liftMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         liftMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         liftMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
-
+        liftMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
-    public void highBasket(){
-        liftMotor1.setTargetPosition(1500); //change this
+    // Move the lift to a specific height in inches
+    public void moveToHeight(double heightInInches, double power) {
+        // If the lift is frozen, do not allow it to move
+        if (isFrozen) {
+            telemetry.addData("Lift is frozen", "Cannot move until unfreezed");
+            telemetry.update();
+            return;
+        }
+
+        int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+        // Set target position for both motors
+        liftMotor1.setTargetPosition(targetTicks);
+        liftMotor2.setTargetPosition(targetTicks);
+
+        // Set motors to RUN_TO_POSITION mode
         liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor1.setPower(0.45);
-        liftMotor2.setTargetPosition(1500); //change this
         liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor2.setPower(0.45);
 
+        // Set motor power
+        liftMotor1.setPower(power);
+        liftMotor2.setPower(power);
 
+        // Wait for the lift to reach the target position
+        while (liftMotor1.isBusy() && liftMotor2.isBusy()) {
+            telemetry.addData("Target Height (in)", heightInInches);
+            telemetry.addData("Current Position Motor 1 (ticks)", liftMotor1.getCurrentPosition());
+            telemetry.addData("Current Position Motor 2 (ticks)", liftMotor2.getCurrentPosition());
+            telemetry.update();
+        }
+
+        // Apply holding power to maintain position
+        liftMotor1.setPower(holdingPower);
+        liftMotor2.setPower(holdingPower);
+
+        // If the lift has reached the target, mark it as frozen
+        if (heightInInches == 43.5) { // Example: High rung position
+            isFrozen = true; // Freeze the lift when it reaches the high rung
+        } else {
+            isFrozen = false; // Allow movement again for other heights
+        }
     }
 
-    public void lowBasket(){
-        liftMotor1.setTargetPosition(2000); //change this
-        liftMotor2.setTargetPosition(2000); //change this
-        liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor1.setPower(0.45);
-        liftMotor2.setPower(0.45);
-        telemetry.addData("Lift position: ", liftMotor1.getCurrentPosition());
-        telemetry.addData("Lift position: ", liftMotor2.getCurrentPosition());
-        telemetry.update();
-
+    public void unfreezeLift() {
+        isFrozen = false; // Set the frozen flag to false to allow movement again
     }
 
-    public void neutral(){
-        liftMotor1.setTargetPosition(0);
-        liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor1.setPower(0.30); // change this
-        liftMotor2.setTargetPosition(0);
-        liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor2.setPower(0.30); // change this
+
+    // Predefined heights
+    public void highBasket() {
+        moveToHeight(33.0, 0.45);
+    }
+
+    public void lowBasket() {
+        moveToHeight(26.25, 0.30);
+    }
+
+    public void highRung() {
+        moveToHeight(14.0, 0.50);
+    }
+
+    public void lowRung() {
+        moveToHeight(8.0, 0.25);
+    }
+
+    public void neutral() {
+        moveToHeight(3.0, 0.30);
     }
 }
