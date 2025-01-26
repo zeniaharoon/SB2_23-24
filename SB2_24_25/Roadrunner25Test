@@ -1,0 +1,125 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.rowlandhall.meepmeep.roadrunner.trajectorysequence.TrajectorySequence;
+
+
+@Config
+@Autonomous(name = "Roadrunner25Test", group = "Robot")
+public class Roadrunner25Test extends LinearOpMode {
+
+    private Servo rotateClaw;
+    private Servo clawOpen;
+    private DcMotorEx liftMotor;
+    private PIDF_Arm pidfArm;
+    private final int[] armPositions = {0, 100, 170, 235, 250, 275};
+    private int currentIndex = 0;
+
+    private final double ROTATE_CLAW_ZERO = 0.43; // Match the value from TeleOp
+    private final double CLAW_CLOSED_POSITION = 0.9;
+
+    @Override
+    public void runOpMode() {
+        Pose2d initialPose = new Pose2d(9.27, -61.17, Math.toRadians(90.00));
+        MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
+        DcMotor liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
+        DcMotor liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
+        ElapsedTime runtime = new ElapsedTime();
+        LinearLift2425 linearLift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
+
+        rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
+        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+        liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
+
+        pidfArm = new PIDF_Arm(liftMotor, new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry()));
+        //pidfArm.setTarget(armPositions[0]);
+        pidfArm.update();
+        liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Rotate Claw Position", ROTATE_CLAW_ZERO);
+        telemetry.addData("Claw Position", CLAW_CLOSED_POSITION);
+        telemetry.update();
+
+        // Autonomous actions here
+        // Build the trajectories sequentially
+        TrajectoryActionBuilder trajectory0 = drive.actionBuilder(initialPose)
+                .splineToConstantHeading(new Vector2d(7.93, -27.95), Math.toRadians(92.30));
+
+        TrajectoryActionBuilder trajectory1 = drive.actionBuilder(new Pose2d(7.93, -27.95, Math.toRadians(92.30)))
+                .splineToConstantHeading(new Vector2d(6.89, -34.23), Math.toRadians(268.10))
+                .turn(Math.toRadians(180))
+                .splineToConstantHeading(new Vector2d(6.47, -41.32), Math.toRadians(266.63))
+                .splineToConstantHeading(new Vector2d(29.84, -41.32), Math.toRadians(0.00))
+                .splineToConstantHeading(new Vector2d(32.35, -9.18), Math.toRadians(85.54))
+                .splineToConstantHeading(new Vector2d(46.33, -7.30), Math.toRadians(7.65))
+                .splineToConstantHeading(new Vector2d(49.04, -25.25), Math.toRadians(-81.40))
+                .splineToConstantHeading(new Vector2d(48.21, -58.85), Math.toRadians(268.58))
+                .splineToConstantHeading(new Vector2d(52.38, -58.85), Math.toRadians(0.00))
+                .splineToConstantHeading(new Vector2d(52.38, -11.27), Math.toRadians(90.00))
+                .splineToConstantHeading(new Vector2d(57.39, -10.85), Math.toRadians(4.76))
+                .splineToConstantHeading(new Vector2d(58.85, -26.50), Math.toRadians(-84.67))
+                .splineToConstantHeading(new Vector2d(59.90, -59.90), Math.toRadians(-88.21));
+
+        TrajectoryActionBuilder trajectory2 = drive.actionBuilder(new Pose2d(59.9, -59.90, Math.toRadians(-88.21)))
+                .splineTo(new Vector2d(54.50, -37.45), Math.toRadians(88.11))
+                .splineTo(new Vector2d(47.53, -35.22), Math.toRadians(162.30))
+                .splineTo(new Vector2d(47.98, -57.17), Math.toRadians(-88.84))
+                .splineTo(new Vector2d(47.53, -67.40), Math.toRadians(267.51))
+                .splineTo(new Vector2d(47.23, -68.89), Math.toRadians(88.33))
+                .splineTo(new Vector2d(47.68, -53.61), Math.toRadians(89.38));
+
+        TrajectoryActionBuilder trajectory3 = drive.actionBuilder(new Pose2d(47.64, -53.61, Math.toRadians(89.38)))
+                .splineTo(new Vector2d(8.28, -52.92), Math.toRadians(179.01))
+                .splineTo(new Vector2d(7.56, -25.56), Math.toRadians(91.51));
+
+        TrajectoryActionBuilder trajectory4 = drive.actionBuilder(new Pose2d(3.60, -25.56, Math.toRadians(90.00)))
+                .splineTo(new Vector2d(4.68, -34.92), Math.toRadians(-83.42))
+                .splineTo(new Vector2d(28.08, -42.12), Math.toRadians(-17.10))
+                .splineTo(new Vector2d(45.72, -45.72), Math.toRadians(-11.53))
+                .splineTo(new Vector2d(48.60, -57.60), Math.toRadians(-76.37))
+                .splineTo(new Vector2d(48.24, -67.68), Math.toRadians(267.95))
+                .splineTo(new Vector2d(48.96, -55.08), Math.toRadians(86.73));
+
+
+
+        waitForStart();
+        
+
+
+        //pidfArm.setTarget(armPositions[2]);
+//        double currentTime = runtime.seconds();
+//
+//        while(Math.abs(liftMotor.getCurrentPosition() - armPositions[2]) >= 10 && opModeIsActive()) {
+//            pidfArm.update();
+//            /*if(runtime.seconds() - currentTime > 10) {
+//                break;
+//            }*/
+//        }
+
+
+        Actions.runBlocking(
+                new SequentialAction(
+                        trajectory0.build(),
+                        trajectory1.build()
+                )
+        );
+
+    }
+}
