@@ -48,13 +48,17 @@ public class Roadrunner25Test extends LinearOpMode {
         liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
 
         pidfArm = new PIDF_Arm(liftMotor, new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry()));
-        //pidfArm.setTarget(armPositions[0]);
-        pidfArm.update();
+        //liftMotor.setTargetPosition(armPositions[0]);
+        liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //liftMotor.setTargetPosition(armPositions[0]);
+        liftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        liftMotor.setPower(0);
         liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Rotate Claw Position", ROTATE_CLAW_ZERO);
         telemetry.addData("Claw Position", CLAW_CLOSED_POSITION);
+        telemetry.addData("Arm Position", liftMotor.getCurrentPosition());
         telemetry.update();
 
         // Autonomous actions here
@@ -100,26 +104,51 @@ public class Roadrunner25Test extends LinearOpMode {
 
 
         waitForStart();
-        
-
-
-        //pidfArm.setTarget(armPositions[2]);
-//        double currentTime = runtime.seconds();
-//
-//        while(Math.abs(liftMotor.getCurrentPosition() - armPositions[2]) >= 10 && opModeIsActive()) {
-//            pidfArm.update();
-//            /*if(runtime.seconds() - currentTime > 10) {
-//                break;
-//            }*/
-//        }
 
 
         Actions.runBlocking(
                 new SequentialAction(
-                        trajectory0.build(),
+                        trajectory0.build()
+                )
+        );
+
+        pidfArm.setTarget(armPositions[2]);
+        double currentTime = runtime.seconds();
+
+
+        while(Math.abs(liftMotor.getCurrentPosition() - armPositions[2]) >= 10 && opModeIsActive()) {
+            pidfArm.update();
+            if(runtime.seconds() - currentTime > 10) {
+                break;
+            }
+            telemetry.addData("Arm position",liftMotor.getCurrentPosition());
+            telemetry.update();
+        }
+
+
+
+        liftMotor.setTargetPosition(liftMotor.getCurrentPosition());
+        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor.setPower(0.05);
+        telemetry.addData("Arm position",liftMotor.getCurrentPosition());
+        telemetry.update();
+
+
+
+
+
+       Actions.runBlocking(
+                new SequentialAction(
                         trajectory1.build()
                 )
         );
+
+       //re-join thread call
+
+/*
+        liftMotor.setTargetPosition(armPositions[0]);
+        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor.setPower(0.5);*/
 
     }
 }
