@@ -1,8 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
@@ -14,25 +19,118 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.rowlandhall.meepmeep.roadrunner.trajectorysequence.TrajectorySequence;
 
 
 @Config
 @Autonomous(name = "Roadrunner25Test", group = "Robot")
 public class Roadrunner25Test extends LinearOpMode {
 
+    private static final double TICKS_PER_REV = 537.6; // Example for GoBilda 5202 motor
+    private static final double LEAD_SCREW_PITCH = 4.72441; // Inches per revolution
+    private static final double TICKS_PER_INCH = TICKS_PER_REV / LEAD_SCREW_PITCH;
+
+    double holdingPower = 0.1; 
+    private boolean isFrozen = false; // Flag to check if the lift should be frozen
     private Servo rotateClaw;
     private Servo clawOpen;
     private DcMotorEx liftMotor;
-    private PIDF_Arm pidfArm;
-    private final int[] armPositions = {0, 100, 170, 235, 250, 275};
+    //private final int[] armPositions = {0, 100, 170, 235, 250, 275};
     private int currentIndex = 0;
 
     private final double ROTATE_CLAW_ZERO = 0.43; // Match the value from TeleOp
     private final double CLAW_CLOSED_POSITION = 0.9;
+
+    public class Claw {
+        private Servo claw;
+
+        public Claw(HardwareMap hardwareMap) {
+            claw = hardwareMap.get(Servo.class, "clawOpen");
+        }
+
+        public class CloseClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                claw.setPosition(0.9);
+                return false;
+            }
+        }
+
+        public Action CloseClaw() {
+            return new Claw.CloseClaw();
+        }
+
+        public class OpenClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                claw.setPosition(0.6);
+                return false;
+            }
+        }
+
+        public Action OpenClaw() {
+            return new Claw.OpenClaw();
+        }
+    }
+
+    public class Slides {
+        private DcMotorEx liftMotor1;
+        private DcMotorEx liftMotor2;
+
+        public Slides(HardwareMap hardwareMap) {
+            liftMotor1 = hardwareMap.get(DcMotorEx.class, "liftMotor1");
+            liftMotor2 = hardwareMap.get(DcMotorEx.class, "liftMotor2");
+        }
+
+        public class getReady implements Action {
+            double heightInInches = 17.0;
+            double power = 0.50;
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+                // Set target position for both motors
+                liftMotor1.setTargetPosition(targetTicks);
+                liftMotor2.setTargetPosition(targetTicks);
+
+                // Set motors to RUN_TO_POSITION mode
+                liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                // Set motor power
+                liftMotor1.setPower(power);
+                liftMotor2.setPower(power);
+
+                // Wait for the lift to reach the target position
+                while (liftMotor1.isBusy() && liftMotor2.isBusy()) {
+                    telemetry.addData("Target Height (in)", heightInInches);
+                    telemetry.addData("Current Position Motor 1 (ticks)", liftMotor1.getCurrentPosition());
+                    telemetry.addData("Current Position Motor 2 (ticks)", liftMotor2.getCurrentPosition());
+                    telemetry.update();
+                }
+
+                // Apply holding power to maintain position
+                liftMotor1.setPower(holdingPower);
+                liftMotor2.setPower(holdingPower);
+
+                // If the lift has reached the target, mark it as frozen
+                if (heightInInches == heightInInches){
+                    isFrozen = true; // Freeze the lift when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+        public Action getReady() {
+            return new Slides.getReady();
+        }
+
+    }
 
     @Override
     public void runOpMode() {
@@ -44,13 +142,10 @@ public class Roadrunner25Test extends LinearOpMode {
         LinearLift2425 linearLift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
 
         rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
-        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
         liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
 
-        pidfArm = new PIDF_Arm(liftMotor, new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry()));
-        //liftMotor.setTargetPosition(armPositions[0]);
+
         liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        //liftMotor.setTargetPosition(armPositions[0]);
         liftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         liftMotor.setPower(0);
         liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -61,25 +156,30 @@ public class Roadrunner25Test extends LinearOpMode {
         telemetry.addData("Arm Position", liftMotor.getCurrentPosition());
         telemetry.update();
 
+        Claw ThisClaw = new Claw(hardwareMap);
+        Slides TheseSlides = new Slides(hardwareMap);
+
+
+
         // Autonomous actions here
         // Build the trajectories sequentially
         TrajectoryActionBuilder trajectory0 = drive.actionBuilder(initialPose)
-                .splineToConstantHeading(new Vector2d(7.93, -27.95), Math.toRadians(92.30));
+                .splineToConstantHeading(new Vector2d(7.93, -45.95), Math.toRadians(92.30));
 
-        TrajectoryActionBuilder trajectory1 = drive.actionBuilder(new Pose2d(7.93, -27.95, Math.toRadians(92.30)))
-                .splineToConstantHeading(new Vector2d(6.89, -34.23), Math.toRadians(268.10))
-                .turn(Math.toRadians(180))
-                .splineToConstantHeading(new Vector2d(6.47, -41.32), Math.toRadians(266.63))
-                .splineToConstantHeading(new Vector2d(29.84, -41.32), Math.toRadians(0.00))
-                .splineToConstantHeading(new Vector2d(32.35, -9.18), Math.toRadians(85.54))
-                .splineToConstantHeading(new Vector2d(46.33, -7.30), Math.toRadians(7.65))
-                .splineToConstantHeading(new Vector2d(49.04, -25.25), Math.toRadians(-81.40))
-                .splineToConstantHeading(new Vector2d(48.21, -58.85), Math.toRadians(268.58))
-                .splineToConstantHeading(new Vector2d(52.38, -58.85), Math.toRadians(0.00))
-                .splineToConstantHeading(new Vector2d(52.38, -11.27), Math.toRadians(90.00))
-                .splineToConstantHeading(new Vector2d(57.39, -10.85), Math.toRadians(4.76))
-                .splineToConstantHeading(new Vector2d(58.85, -26.50), Math.toRadians(-84.67))
-                .splineToConstantHeading(new Vector2d(59.90, -59.90), Math.toRadians(-88.21));
+        TrajectoryActionBuilder trajectory1 = drive.actionBuilder(new Pose2d(7.93, -45.95, Math.toRadians(92.30)))
+                .splineToConstantHeading(new Vector2d(6.89, -50.23), Math.toRadians(268.10))
+                //.turn(Math.toRadians(180))
+                /*.splineToConstantHeading(new Vector2d(6.47, -49.32), Math.toRadians(266.63))
+                .splineToConstantHeading(new Vector2d(29.84, -49.32), Math.toRadians(0.00))
+                .splineToConstantHeading(new Vector2d(32.35, -17.18), Math.toRadians(85.54))
+                .splineToConstantHeading(new Vector2d(46.33, -15.30), Math.toRadians(7.65))
+                .splineToConstantHeading(new Vector2d(49.04, -33.25), Math.toRadians(-81.40))
+                .splineToConstantHeading(new Vector2d(48.21, -66.85), Math.toRadians(268.58))
+                .splineToConstantHeading(new Vector2d(52.38, -66.85), Math.toRadians(0.00))
+                .splineToConstantHeading(new Vector2d(52.38, -19.27), Math.toRadians(90.00))
+                .splineToConstantHeading(new Vector2d(57.39, -18.85), Math.toRadians(4.76))
+                .splineToConstantHeading(new Vector2d(58.85, -34.50), Math.toRadians(-84.67))
+                .splineToConstantHeading(new Vector2d(59.90, -67.90), Math.toRadians(-88.21))*/;
 
         TrajectoryActionBuilder trajectory2 = drive.actionBuilder(new Pose2d(59.9, -59.90, Math.toRadians(-88.21)))
                 .splineTo(new Vector2d(54.50, -37.45), Math.toRadians(88.11))
@@ -108,47 +208,31 @@ public class Roadrunner25Test extends LinearOpMode {
 
         Actions.runBlocking(
                 new SequentialAction(
-                        trajectory0.build()
+                        new ParallelAction(
+                                new SequentialAction(
+                                        new ParallelAction(
+                                                trajectory0.build(),
+                                                ThisClaw.CloseClaw()
+                                        ),
+                                        trajectory1.build()
+                                ),
+                                TheseSlides.getReady()
+
+
+
+
+                        )
+
+
+
+
                 )
         );
 
-        pidfArm.setTarget(armPositions[2]);
-        double currentTime = runtime.seconds();
-
-
-        while(Math.abs(liftMotor.getCurrentPosition() - armPositions[2]) >= 10 && opModeIsActive()) {
-            pidfArm.update();
-            if(runtime.seconds() - currentTime > 10) {
-                break;
-            }
-            telemetry.addData("Arm position",liftMotor.getCurrentPosition());
-            telemetry.update();
-        }
-
-
-
-        liftMotor.setTargetPosition(liftMotor.getCurrentPosition());
-        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor.setPower(0.05);
-        telemetry.addData("Arm position",liftMotor.getCurrentPosition());
-        telemetry.update();
 
 
 
 
-
-       Actions.runBlocking(
-                new SequentialAction(
-                        trajectory1.build()
-                )
-        );
-
-       //re-join thread call
-
-/*
-        liftMotor.setTargetPosition(armPositions[0]);
-        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor.setPower(0.5);*/
 
     }
 }
