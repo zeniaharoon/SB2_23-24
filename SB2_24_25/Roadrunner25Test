@@ -32,7 +32,8 @@ public class Roadrunner25Test extends LinearOpMode {
     private static final double LEAD_SCREW_PITCH = 4.72441; // Inches per revolution
     private static final double TICKS_PER_INCH = TICKS_PER_REV / LEAD_SCREW_PITCH;
 
-    double holdingPower = 0.1; 
+    double holdingPowerSlides = 0.1;
+    double holdingPowerArm = 0.2;
     private boolean isFrozen = false; // Flag to check if the lift should be frozen
     private Servo rotateClaw;
     private Servo clawOpen;
@@ -85,7 +86,7 @@ public class Roadrunner25Test extends LinearOpMode {
         }
 
         public class getReady implements Action {
-            double heightInInches = 17.0;
+            double heightInInches = 8.0;
             double power = 0.50;
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
@@ -113,8 +114,8 @@ public class Roadrunner25Test extends LinearOpMode {
                 }
 
                 // Apply holding power to maintain position
-                liftMotor1.setPower(holdingPower);
-                liftMotor2.setPower(holdingPower);
+                liftMotor1.setPower(holdingPowerSlides);
+                liftMotor2.setPower(holdingPowerSlides);
 
                 // If the lift has reached the target, mark it as frozen
                 if (heightInInches == heightInInches){
@@ -132,6 +133,56 @@ public class Roadrunner25Test extends LinearOpMode {
 
     }
 
+    public class Arm {
+        private DcMotorEx armMotor;
+
+        public Arm(HardwareMap hardwareMap) {
+            armMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
+        }
+
+        public class highRung implements Action {
+            double heightInInches = 1.0;
+            double power = 0.3;
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+                // Set target position for both motors
+                armMotor.setTargetPosition(targetTicks);
+
+                // Set motors to RUN_TO_POSITION mode
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                // Set motor power
+                armMotor.setPower(power);
+
+                // Wait for the lift to reach the target position
+                while (armMotor.isBusy()) {
+                    telemetry.addData("Target Height (in)", heightInInches);
+                    telemetry.addData("Current Position Motor 1 (ticks)", armMotor.getCurrentPosition());
+                    telemetry.update();
+                }
+
+                // Apply holding power to maintain position
+                armMotor.setPower(holdingPowerArm);
+
+                // If the lift has reached the target, mark it as frozen
+                if (heightInInches == heightInInches){
+                    isFrozen = true; // Freeze the arm when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+        public Action highRung() {
+            return new Arm.highRung();
+        }
+
+    }
+
     @Override
     public void runOpMode() {
         Pose2d initialPose = new Pose2d(9.27, -61.17, Math.toRadians(90.00));
@@ -142,22 +193,18 @@ public class Roadrunner25Test extends LinearOpMode {
         LinearLift2425 linearLift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
 
         rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
-        liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
+        /*liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
 
 
         liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         liftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         liftMotor.setPower(0);
-        liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);*/
 
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("Rotate Claw Position", ROTATE_CLAW_ZERO);
-        telemetry.addData("Claw Position", CLAW_CLOSED_POSITION);
-        telemetry.addData("Arm Position", liftMotor.getCurrentPosition());
-        telemetry.update();
 
         Claw ThisClaw = new Claw(hardwareMap);
         Slides TheseSlides = new Slides(hardwareMap);
+        Arm ThisArm = new Arm(hardwareMap);
 
 
 
@@ -167,7 +214,7 @@ public class Roadrunner25Test extends LinearOpMode {
                 .splineToConstantHeading(new Vector2d(7.93, -45.95), Math.toRadians(92.30));
 
         TrajectoryActionBuilder trajectory1 = drive.actionBuilder(new Pose2d(7.93, -45.95, Math.toRadians(92.30)))
-                .splineToConstantHeading(new Vector2d(6.89, -50.23), Math.toRadians(268.10))
+                .splineToConstantHeading(new Vector2d(6.89, -60.23), Math.toRadians(268.10))
                 //.turn(Math.toRadians(180))
                 /*.splineToConstantHeading(new Vector2d(6.47, -49.32), Math.toRadians(266.63))
                 .splineToConstantHeading(new Vector2d(29.84, -49.32), Math.toRadians(0.00))
@@ -216,7 +263,11 @@ public class Roadrunner25Test extends LinearOpMode {
                                         ),
                                         trajectory1.build()
                                 ),
-                                TheseSlides.getReady()
+                                new ParallelAction(
+                                        ThisArm.highRung(),
+                                        TheseSlides.getReady()
+
+                                )
 
 
 
