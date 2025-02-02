@@ -1,0 +1,308 @@
+package org.firstinspires.ftc.teamcode;
+
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+
+import android.app.Activity;
+import android.graphics.Color;
+import android.view.View;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+@Config
+@TeleOp(name = "TeleOp25", group = "Mecanum")
+public class TeleOp25 extends LinearOpMode {
+    private DcMotor rightFront;
+    private DcMotor leftFront;
+    private DcMotor leftBack;
+    private DcMotor rightBack;
+    private ElapsedTime runtime = new ElapsedTime();
+    private LinearLift2425 lift;
+    private Servo clawOpen;
+
+    private Servo rotateClaw;
+    private Servo wristServo;
+    private double rotateClawPosition;
+    public FtcDashboard ftcDashboard;
+
+    private boolean debug = true;
+
+
+    private DcMotor liftMotor1;
+    private DcMotor liftMotor2;
+
+    private DcMotorEx liftMotor;
+    private PIDF_Arm pidfArm;
+    // Define position sequence for the arm
+    //To ZARIA: ONLY CHANGE THE 60 in armPositions
+    private final int[] armPositions = {0, 60, 170, 235, 250, 275};
+    private int currentIndex = 0; // Start at the first position
+    private ElapsedTime dpadCooldown = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+
+    // Define rotation limits
+    private final double ROTATE_CLAW_MIN = 0; // Minimum position
+    private final double ROTATE_CLAW_MAX = 1; // Maximum position
+    private final double ROTATE_CLAW_ZERO = 0; // Zeroed position
+    private final double WRIST_UP = 0.5;
+
+
+
+
+    @Override
+    public void runOpMode() {
+
+        this.ftcDashboard = FtcDashboard.getInstance();
+        this.telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+
+        telemetry.addData("Status", "Initializing...");
+        telemetry.update();
+
+        // Initialize drivetrain motors
+        rightFront = hardwareMap.get(DcMotor.class, "frontRight");
+        leftFront = hardwareMap.get(DcMotor.class, "frontLeft");
+        leftBack = hardwareMap.get(DcMotor.class, "backLeft");
+        rightBack = hardwareMap.get(DcMotor.class, "backRight");
+
+        // Initialize attachments
+        liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
+        liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
+        lift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
+
+        clawOpen = hardwareMap.get(Servo.class, "clawOpen");
+
+        rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
+
+        wristServo = hardwareMap.get(Servo.class, "wristServo");
+
+        liftMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
+        pidfArm = new PIDF_Arm(liftMotor, new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry()));
+        liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
+        // Reset and configure encoders
+
+        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        // Set directions for mecanum drive
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+        // HSV color scale and RelativeLayout for background color change
+        final float hsvValues[] = {0F, 0F, 0F};
+        final double SCALE_FACTOR = 255;
+        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
+        final View relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
+
+        waitForStart();
+        runtime.reset();
+
+        clawOpen.setPosition(0.9);
+
+        pidfArm.setTarget(liftMotor.getCurrentPosition());
+        pidfArm.update();
+
+        rotateClawPosition = ROTATE_CLAW_ZERO;
+        rotateClaw.setPosition(rotateClawPosition);
+
+
+        while (opModeIsActive()) {
+
+            // Read joystick values
+//            double y = gamepad1.left_stick_y;  // Forward/backward (inverted for forward)
+//            double x = -gamepad1.left_stick_x;   // Side-to-side (strafe)
+//            double r = -gamepad1.right_stick_x;  // Rotation
+//
+//            // Calculate motor powers
+//            double p1 = y + x + r;  // Left Front
+//            double p2 = y - x - r;  // Right Front
+//            double p3 = y - x + r;  // Left Back
+//            double p4 = y + x - r;  // Right Back
+//
+//            // Normalize motor powers if any exceed 1.0
+//
+//            double maxval = max(abs(p1), max(abs(p2), max(abs(p3), abs(p4))));
+//            if (maxval > 1.0) {
+//                p1 /= maxval;
+//                p2 /= maxval;
+//                p3 /= maxval;
+//                p4 /= maxval;
+//            } else {
+//                // Apply some kind of small adjustment for lower values
+//                p1 *= 1.0;
+//                p2 *= 1.0;
+//                p3 *= 1.0;
+//                p4 *= 1.0;
+//            }
+//
+//
+//            // Set motor powers
+//            leftFront.setPower(p1);
+//            rightFront.setPower(p2);
+//            leftBack.setPower(p3);
+//            rightBack.setPower(p4);
+            // Sensitivity scaling factor
+            final double SENSITIVITY = 0.55;
+
+            // Read and scale joystick values
+            double y = SENSITIVITY * Math.signum(gamepad1.left_stick_y) * Math.pow(gamepad1.left_stick_y, 2);  // Forward/backward
+            double x = -SENSITIVITY * Math.signum(gamepad1.left_stick_x) * Math.pow(gamepad1.left_stick_x, 2); // Side-to-side (strafe)
+            double r = -SENSITIVITY * Math.signum(gamepad1.right_stick_x) * Math.pow(gamepad1.right_stick_x, 2); // Rotation
+
+            // Calculate motor powers
+            double p1 = y + x + r;  // Left Front
+            double p2 = y - x - r;  // Right Front
+            double p3 = y - x + r;  // Left Back
+            double p4 = y + x - r;  // Right Back
+
+            // Normalize motor powers if any exceed 1.0
+            double maxval = max(abs(p1), max(abs(p2), max(abs(p3), abs(p4))));
+            if (maxval > 1.0) {
+                p1 /= maxval;
+                p2 /= maxval;
+                p3 /= maxval;
+                p4 /= maxval;
+            }
+
+            // Set motor powers
+            leftFront.setPower(p1);
+            rightFront.setPower(p2);
+            leftBack.setPower(p3);
+            rightBack.setPower(p4);
+
+
+
+            telemetry.addData("motor power (p1) ", p1);
+            telemetry.addData("motor power (p2) ", p2);
+            telemetry.addData("motor power (p3) ", p3);
+            telemetry.addData("motor power (p4) ", p4);
+            telemetry.update();
+
+
+
+
+            // Map gamepad2 left stick Y-axis to lift motor target position
+            double joystickValue = gamepad2.left_stick_y;
+//            liftMotor4.setDirection(DcMotorSimple.Direction.FORWARD);
+//            liftMotor4.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            //hang
+            if (gamepad2.b){
+                liftMotor2.setPower(-1);
+                liftMotor1.setPower(-1);
+                sleep(50000);
+            }
+
+
+            // debounce logic for D-pad buttons
+
+            if (gamepad2.dpad_up && dpadCooldown.milliseconds() > 300) {
+                currentIndex++;
+                if (currentIndex >= armPositions.length) {
+                    currentIndex = armPositions.length - 1;
+                }
+                pidfArm.setTarget(armPositions[currentIndex]);
+                dpadCooldown.reset(); // Reset the cooldown timer
+            }
+
+            if (gamepad2.dpad_down && dpadCooldown.milliseconds() > 300) {
+                currentIndex--;
+                if (currentIndex < 1) {
+                    currentIndex = 1;
+                }
+
+                pidfArm.setTarget(armPositions[currentIndex]);
+                dpadCooldown.reset(); // Reset the cooldown timer
+            }
+
+            // Update the PID control for the arm
+            pidfArm.update();
+
+
+
+            //close
+            if (gamepad2.left_bumper) {
+                clawOpen.setPosition(0.9);
+            }
+
+            //open
+            if (gamepad2.right_bumper) {
+                clawOpen.setPosition(0.6);
+            }
+
+
+
+
+            double joystickInput = -gamepad2.left_stick_y; // Inverted because up is negative
+            double increment = joystickInput * 0.01; // Scale the joystick input for finer control
+
+            // Adjust the position and clamp to the defined range
+            rotateClawPosition += increment;
+            rotateClawPosition = Math.max(ROTATE_CLAW_MIN, Math.min(ROTATE_CLAW_MAX, rotateClawPosition));
+            rotateClaw.setPosition(rotateClawPosition); // Set the servo position
+
+
+            //pick up off floor
+            if (gamepad2.a){
+                wristServo.setPosition(0.03);
+            }
+
+            if(gamepad2.x) {
+                wristServo.setPosition(0.25);
+            }
+
+            //pick up off wall
+            if(gamepad2.y) {
+                wristServo.setPosition(0.45);
+            }
+
+            // Debugging telemetry
+            telemetry.addData("Rotate Claw Position", rotateClawPosition);
+            telemetry.update();
+
+
+            // Control the slides with the right joystick (gamepad2.right_stick_y)
+            double slidePower = -gamepad2.right_stick_y; // Negative to match control direction
+
+            if (Math.abs(slidePower) < 0.05) { // If joystick input is near neutral, apply holding power
+                slidePower = lift.holdingPower; // Apply holding power instead of zero power
+            }
+            liftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            liftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            liftMotor1.setPower(slidePower);
+            liftMotor2.setPower(slidePower);
+
+
+
+
+
+            relativeLayout.post(new Runnable() {
+                public void run() {
+                    relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, hsvValues));
+                }
+            });
+
+
+        }
+
+    }
+
+}
