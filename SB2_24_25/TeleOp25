@@ -43,15 +43,14 @@ public class TeleOp25 extends LinearOpMode {
     private DcMotorEx liftMotor;
     private PIDF_Arm pidfArm;
     // Define position sequence for the arm
-    //To ZARIA: ONLY CHANGE THE 60 in armPositions
-    private final int[] armPositions = {0, 60, 170, 235, 250, 275};
+    private final int[] armPositions = {0, 230, 1050, 1400, 1550};
     private int currentIndex = 0; // Start at the first position
     private ElapsedTime dpadCooldown = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     // Define rotation limits
     private final double ROTATE_CLAW_MIN = 0; // Minimum position
     private final double ROTATE_CLAW_MAX = 1; // Maximum position
-    private final double ROTATE_CLAW_ZERO = 0; // Zeroed position
+    private final double ROTATE_CLAW_ZERO = 1; // Zeroed position
     private final double WRIST_UP = 0.5;
 
 
@@ -240,7 +239,7 @@ public class TeleOp25 extends LinearOpMode {
 
             //close
             if (gamepad2.left_bumper) {
-                clawOpen.setPosition(0.9);
+                clawOpen.setPosition(1);
             }
 
             //open
@@ -248,6 +247,17 @@ public class TeleOp25 extends LinearOpMode {
                 clawOpen.setPosition(0.6);
             }
 
+
+            // Toggle logic for rotate claw
+            if (gamepad2.x && dpadCooldown.milliseconds() > 300) {
+                if (rotateClawPosition == ROTATE_CLAW_ZERO) {
+                    rotateClawPosition = 0.3;
+                } else {
+                    rotateClawPosition = ROTATE_CLAW_ZERO;
+                }
+                rotateClaw.setPosition(rotateClawPosition);
+                dpadCooldown.reset(); // Prevent rapid toggling
+            }
 
 
 
@@ -265,13 +275,10 @@ public class TeleOp25 extends LinearOpMode {
                 wristServo.setPosition(0.03);
             }
 
-            if(gamepad2.x) {
-                wristServo.setPosition(0.25);
-            }
 
             //pick up off wall
             if(gamepad2.y) {
-                wristServo.setPosition(0.45);
+                wristServo.setPosition(0.35);
             }
 
             // Debugging telemetry
