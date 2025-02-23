@@ -528,47 +528,7 @@ public class Roadrunner25Test extends LinearOpMode {
                         trajectory2.build()
 
 
-//                        new ParallelAction(
-////                                ThisWrist.WristParallel(),
-////                                ThisArm.highRung(),
-////                                ThisClaw.CloseClaw(),
-////                                ThisRotateClaw.RotateZero()
-//                                //TheseSlides.highRung()
-//                        ),
-////
-//                        new ParallelAction(
-////                                ThisArm.holdArm()
-//                                /*ThisWrist.WristParallel(),
-//                                ThisArm.highRung(),
-//                                TheseSlides.highRung(),
-//                                ThisClaw.CloseClaw()*/
-//
-////                                ThisClaw.CloseClaw()
-////
-//                        ),
-//
-////
-                        /*new ParallelAction(
-                                TheseSlides.highRung(),
-                                ThisArm.highRung(),
-                                ThisClaw.CloseClaw()
-////                                TheseSlides.placeSpecimen(),
-////                                ThisClaw.CloseClaw()
-                        ),
-//
-                        new ParallelAction(
-                                TheseSlides.highRung(),
-                                ThisArm.highRung(),
-                                ThisClaw.CloseClaw(),
-                                ThisArm.holdArm()
-//                                ThisArm.highRung(),
-//                                TheseSlides.placeSpecimen(),
-//                                ThisClaw.OpenClaw()
-                        ),
-                        new ParallelAction(
-                                TheseSlides.placeSpecimen(),
-                                ThisArm.highRung()
-                        )*/
+
 
 
 
@@ -576,7 +536,6 @@ public class Roadrunner25Test extends LinearOpMode {
                 )
         );
 
-        //sleep(5000);
 
 
 
