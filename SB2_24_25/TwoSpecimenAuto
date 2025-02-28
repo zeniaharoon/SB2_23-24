@@ -1,0 +1,705 @@
+package org.firstinspires.ftc.teamcode;
+
+
+import androidx.annotation.NonNull;
+
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+
+
+
+@Config
+@Autonomous(name = "TwoSpecimenAuto", group = "Robot")
+public class TwoSpecimenAuto extends LinearOpMode {
+
+
+    private static final double TICKS_PER_REV = 537.6; // Example for GoBilda 5202 motor
+    private static final double LEAD_SCREW_PITCH = 4.72441; // Inches per revolution
+    private static final double TICKS_PER_INCH = TICKS_PER_REV / LEAD_SCREW_PITCH;
+
+
+    double holdingPowerSlides = 0.1;
+    double holdingPowerArm = 0.02; //this is too strong come back and change this
+    private boolean isFrozen = false; // Flag to check if the lift should be frozen
+    private Servo rotateClaw;
+    private Servo clawOpen;
+    private Servo wristServo;
+    private DcMotorEx liftMotor;
+    //private final int[] armPositions = {0, 100, 170, 235, 250, 275};
+    private int currentIndex = 0;
+
+
+    private final double ROTATE_CLAW_ZERO = 0.30; // Match the value from TeleOp
+
+
+    private final double CLAW_CLOSED_POSITION = 0.9;
+
+
+    public class Claw {
+        private Servo claw;
+
+
+        public Claw(HardwareMap hardwareMap) {
+            claw = hardwareMap.get(Servo.class, "clawOpen");
+        }
+
+
+        public class CloseClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                claw.setPosition(0);
+                return false;
+            }
+        }
+
+
+
+
+        public Action CloseClaw() {
+            return new Claw.CloseClaw();
+        }
+
+
+        public class OpenClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                claw.setPosition(0.4);
+                return false;
+            }
+        }
+
+
+        public Action OpenClaw() {
+            return new Claw.OpenClaw();
+        }
+    }
+
+
+    public class Wrist {
+        private Servo wrist;
+
+
+        public Wrist(HardwareMap hardwareMap) {
+            wrist = hardwareMap.get(Servo.class, "wristServo");
+        }
+
+
+        public class WristParallel implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                wrist.setPosition(0.35);
+                return false;
+            }
+        }
+
+
+
+
+        public Action WristParallel() {
+            return new Wrist.WristParallel();
+        }
+
+
+        public class WristDown implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                wrist.setPosition(0);
+                return false;
+            }
+        }
+
+
+        public Action WristDown() {
+            return new Wrist.WristDown();
+        }
+
+
+    }
+
+
+    public class RotateClaw {
+        private Servo rotateClaw;
+
+
+        public RotateClaw(HardwareMap hardwareMap) {
+            rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
+        }
+
+
+        public class RotateZero implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                rotateClaw.setPosition(ROTATE_CLAW_ZERO);
+                return false;
+            }
+        }
+
+
+
+
+        public Action RotateZero() {
+            return new RotateClaw.RotateZero();
+        }
+
+
+
+
+    }
+
+
+    public class Slides {
+        private DcMotorEx liftMotor1;
+        private DcMotorEx liftMotor2;
+
+
+        public Slides(HardwareMap hardwareMap) {
+            liftMotor1 = hardwareMap.get(DcMotorEx.class, "liftMotor1");
+            liftMotor2 = hardwareMap.get(DcMotorEx.class, "liftMotor2");
+        }
+
+
+        public class highRung implements Action {
+            double heightInInches = 13;
+            double power = 1.0;
+
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+
+                // Set target position for both motors
+                liftMotor1.setTargetPosition(targetTicks);
+                liftMotor2.setTargetPosition(targetTicks);
+
+
+                // Set motors to RUN_TO_POSITION mode
+                liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+                // Set motor power
+                liftMotor1.setPower(power);
+                liftMotor2.setPower(power);
+
+
+                telemetry.addData("liftMotor1 Power: ", liftMotor1.getPower());
+                telemetry.addData("liftMotor2 Power: ", liftMotor1.getPower());
+                telemetry.update();
+
+
+                sleep(250);
+                // Wait for the lift to reach the target position
+                while (liftMotor1.isBusy() && liftMotor2.isBusy()) {
+                    telemetry.addData("Target Height (in)", heightInInches);
+                    telemetry.addData("Current Position Motor 1 (ticks)", liftMotor1.getCurrentPosition());
+                    telemetry.addData("Current Position Motor 2 (ticks)", liftMotor2.getCurrentPosition());
+                    telemetry.update();
+                }
+
+
+                // Apply holding power to maintain position
+                liftMotor1.setPower(holdingPowerSlides);
+                liftMotor2.setPower(holdingPowerSlides);
+
+
+                // If the lift has reached the target, mark it as frozen
+                if (heightInInches == heightInInches) {
+                    isFrozen = true; // Freeze the lift when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+
+        public class placeSpecimen implements Action {
+            double heightInInches = 0.1;
+            double power = -1.0;
+
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+
+                liftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                liftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                liftMotor1.setTargetPosition(targetTicks);
+                liftMotor2.setTargetPosition(targetTicks);
+
+
+
+                // Set motor power
+                liftMotor1.setPower(power);
+                liftMotor2.setPower(power);
+
+
+                // Wait for the lift to reach the target position
+                while (liftMotor1.isBusy() && liftMotor2.isBusy()) {
+                    telemetry.addData("Target Height (in)", heightInInches);
+                    telemetry.addData("Current Position Motor 1 (ticks)", liftMotor1.getCurrentPosition());
+                    telemetry.addData("Current Position Motor 2 (ticks)", liftMotor2.getCurrentPosition());
+                    telemetry.update();
+                }
+
+
+                // Apply holding power to maintain position
+                liftMotor1.setPower(holdingPowerSlides);
+                liftMotor2.setPower(holdingPowerSlides);
+
+
+                // If the lift has reached the target, mark it as frozen
+                if (heightInInches == heightInInches) {
+                    isFrozen = true; // Freeze the lift when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+
+        public Action highRung() {
+            return new Slides.highRung();
+        }
+
+
+        public Action placeSpecimen() {
+            return new Slides.placeSpecimen();
+        }
+    }
+
+
+    public class Arm {
+        private DcMotorEx armMotor;
+
+
+        public Arm(HardwareMap hardwareMap) {
+            armMotor = hardwareMap.get(DcMotorEx.class, "liftMotor");
+        }
+
+
+        public class highRung implements Action {
+            double heightInInches = 8.0;
+            double power = 0.6;
+
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+
+                // Set target position for both motors
+                armMotor.setTargetPosition(targetTicks);
+
+
+                // Set motors to RUN_TO_POSITION mode
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+                // Set motor power
+                armMotor.setPower(power);
+
+
+                sleep(150);
+
+
+                // Wait for the lift to reach the target position
+                while (armMotor.isBusy()) {
+                    telemetry.addData("Target Height (ticks)", armMotor.getTargetPosition());
+                    telemetry.addData("Current Position Motor 1 (ticks)", armMotor.getCurrentPosition());
+                    telemetry.addData("Arm Power", armMotor.getPower());
+                    telemetry.update();
+                }
+
+
+                // Apply holding power to maintain position
+                armMotor.setPower(holdingPowerArm);
+
+
+                // If the lift has reached the target, mark it as frozen
+                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) <= 10) {
+                    isFrozen = true; // Freeze the arm when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+
+        public class holdArm implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+
+                // Set motor power
+                telemetry.addData("Arm Holding Power", holdingPowerArm);
+                telemetry.update();
+                armMotor.setPower(holdingPowerArm);
+                return false;
+            }
+        }
+
+
+        public class placeSpecimen implements Action {
+            double heightInInches = 11.0;
+            double power = 0.6;
+
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+
+                // Set target position for both motors
+                armMotor.setTargetPosition(targetTicks);
+
+
+                // Set motors to RUN_TO_POSITION mode
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+                // Set motor power
+                armMotor.setPower(power);
+
+
+                sleep(150);
+
+
+                // Wait for the lift to reach the target position
+                while (armMotor.isBusy()) {
+                    telemetry.addData("Target Height (ticks)", armMotor.getTargetPosition());
+                    telemetry.addData("Current Position Motor 1 (ticks)", armMotor.getCurrentPosition());
+                    telemetry.addData("Arm Power", armMotor.getPower());
+                    telemetry.update();
+                }
+
+
+                // Apply holding power to maintain position
+                armMotor.setPower(holdingPowerArm);
+
+
+                // If the lift has reached the target, mark it as frozen
+                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) <= 10) {
+                    isFrozen = true; // Freeze the arm when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+
+        public class SpecimenPickUp implements Action {
+            double heightInInches = 2.5;
+            double power = 0.6;
+
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+
+                int targetTicks = (int) (heightInInches * TICKS_PER_INCH);
+
+
+                // Set target position for both motors
+                armMotor.setTargetPosition(targetTicks);
+
+
+                // Set motors to RUN_TO_POSITION mode
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+                // Set motor power
+                armMotor.setPower(power);
+
+
+                sleep(150);
+
+
+                // Wait for the lift to reach the target position
+                while (armMotor.isBusy()) {
+                    telemetry.addData("Target Height (ticks)", armMotor.getTargetPosition());
+                    telemetry.addData("Current Position Motor 1 (ticks)", armMotor.getCurrentPosition());
+                    telemetry.addData("Arm Power", armMotor.getPower());
+                    telemetry.update();
+                }
+
+
+                // Apply holding power to maintain position
+                armMotor.setPower(holdingPowerArm);
+
+
+                // If the lift has reached the target, mark it as frozen
+                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) <= 10) {
+                    isFrozen = true; // Freeze the arm when it reaches the high rung
+                } else {
+                    isFrozen = false; // Allow movement again for other heights
+                }
+                return false;
+            }
+        }
+
+
+        public Action highRung() {
+            return new Arm.highRung();
+        }
+
+
+        public Action holdArm() {
+            return new Arm.holdArm();
+        }
+
+
+        public Action placeSpecimen() {
+            return new Arm.placeSpecimen();
+        }
+
+
+        public Action SpecimenPickUp() {
+            return new Arm.SpecimenPickUp();
+        }
+
+
+    }
+
+    
+    public class TimeoutAction implements Action {
+        private final Action action;
+        private final ElapsedTime timer;
+        private final long timeoutMs;
+
+
+        public TimeoutAction(Action action, long timeoutMs) {
+            this.action = action;
+            this.timer = new ElapsedTime();
+            this.timeoutMs = timeoutMs;
+        }
+
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            if (timer.milliseconds() > timeoutMs) {
+                return false; // Timeout reached, stop the action
+            }
+            return action.run(packet); // Continue running the wrapped action
+        }
+    }
+
+
+    @Override
+    public void runOpMode() {
+        Pose2d initialPose = new Pose2d(9.27, -61.17, Math.toRadians(90.00));
+        MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
+        DcMotor liftMotor1 = hardwareMap.get(DcMotor.class, "liftMotor1");
+        DcMotor liftMotor2 = hardwareMap.get(DcMotor.class, "liftMotor2");
+        ElapsedTime runtime = new ElapsedTime();
+        LinearLift2425 linearLift = new LinearLift2425(liftMotor1, liftMotor2, runtime, telemetry);
+
+
+        rotateClaw = hardwareMap.get(Servo.class, "rotateClaw");
+
+
+        Claw ThisClaw = new Claw(hardwareMap);
+        Wrist ThisWrist = new Wrist(hardwareMap);
+        RotateClaw ThisRotateClaw = new RotateClaw(hardwareMap);
+        Slides TheseSlides = new Slides(hardwareMap);
+        Arm ThisArm = new Arm(hardwareMap);
+
+
+        // Autonomous actions here
+        TrajectoryActionBuilder trajectory0 = drive.actionBuilder(initialPose)
+                .splineToConstantHeading(new Vector2d(7.93, -43.69), Math.toRadians(92.30));
+
+
+        TrajectoryActionBuilder trajectory1 = drive.actionBuilder(new Pose2d(7.93, -43.69, Math.toRadians(90)))
+                .splineToConstantHeading(new Vector2d(28.10, -57.47), Math.toRadians(-34.33))
+                .splineToConstantHeading(new Vector2d(43.08, -13.27), Math.toRadians(71.28))
+                .splineToConstantHeading(new Vector2d(47.38, -57.91), Math.toRadians(-84.50));
+
+        TrajectoryActionBuilder trajectory2 = drive.actionBuilder(new Pose2d(47.38, -57.91, Math.toRadians(90.00)))
+                .splineToConstantHeading(new Vector2d(47.38, -45.00), Math.toRadians(89.66));
+
+        TrajectoryActionBuilder trajectory3 = drive.actionBuilder(new Pose2d(47.38, -45.00, Math.toRadians(90.00)))
+                .splineToConstantHeading(new Vector2d(47.38, -57.91), Math.toRadians(-84.50));
+
+
+        TrajectoryActionBuilder trajectory4 = drive.actionBuilder(new Pose2d(47.38, -57.91, Math.toRadians(90.00)))
+                .splineToConstantHeading(new Vector2d(7.93, -43.69), Math.toRadians(160.22));
+
+        TrajectoryActionBuilder trajectory5 = drive.actionBuilder(new Pose2d(7.93, -43.69, Math.toRadians(90.00)))
+                .splineToConstantHeading(new Vector2d(60.58, -63.55), Math.toRadians(-20.66));
+
+
+
+        waitForStart();
+
+
+        Actions.runBlocking(
+                new SequentialAction(
+                        new ParallelAction(
+                                ThisClaw.CloseClaw(),
+                                ThisRotateClaw.RotateZero(),
+                                trajectory0.build()
+
+                        ),
+
+                        // Start place specimen
+                        new ParallelAction(
+                                ThisWrist.WristParallel(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung()
+                        ),
+
+                        new ParallelAction(
+                                ThisWrist.WristDown(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung()
+                        ),
+
+                        new ParallelAction(
+                                TheseSlides.highRung(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung()
+                        ),
+
+                        new ParallelAction(
+                                TheseSlides.highRung(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.placeSpecimen()
+                        ),
+
+
+                        new ParallelAction(
+                                TheseSlides.placeSpecimen(),
+                                ThisClaw.CloseClaw(),
+                                new TimeoutAction(ThisArm.placeSpecimen(), 250)
+                        ),
+
+                        new ParallelAction(
+                                ThisWrist.WristParallel(),
+                                ThisArm.SpecimenPickUp(),
+                                ThisClaw.OpenClaw()
+                        ),
+
+                        // End place specimen
+
+                        // Push sample in
+                        new ParallelAction(
+                                ThisArm.SpecimenPickUp(),
+                                ThisClaw.OpenClaw(),
+                                trajectory1.build()
+                        ),
+
+                        // Back up so Zaria has time
+                        trajectory2.build(),
+                        // Zaria sleep
+                        trajectory3.build(),
+
+                        // Pick up and place preload specimen
+                        ThisClaw.CloseClaw(),
+                        // Zaria sleep
+                        ThisArm.highRung(),
+
+                        new ParallelAction(
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung(),
+                                trajectory4.build()
+                        ),
+
+                        // Start place specimen
+                        new ParallelAction(
+                                ThisWrist.WristParallel(),
+                                ThisArm.highRung(),
+                                ThisClaw.CloseClaw()
+                        ),
+
+                        new ParallelAction(
+                                ThisWrist.WristDown(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung()
+                        ),
+
+                        new ParallelAction(
+                                TheseSlides.highRung(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung()
+                        ),
+
+                        new ParallelAction(
+                                TheseSlides.highRung(),
+                                ThisClaw.CloseClaw(),
+                                ThisArm.placeSpecimen()
+                        ),
+
+
+                        new ParallelAction(
+                                TheseSlides.placeSpecimen(),
+                                ThisClaw.CloseClaw(),
+                                new TimeoutAction(ThisArm.placeSpecimen(), 250)
+                        ),
+
+                        new ParallelAction(
+                                ThisWrist.WristParallel(),
+                                ThisArm.SpecimenPickUp(),
+                                ThisClaw.OpenClaw()
+                        ),
+
+                        // End place specimen
+
+                        //Park
+
+                        trajectory5.build()
+
+
+
+
+
+
+
+
+                )
+        );
+
+
+
+
+
+
+
+    }
+}
+
+
