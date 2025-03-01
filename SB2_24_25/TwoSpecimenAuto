@@ -671,8 +671,8 @@ public class TwoSpecimenAuto extends LinearOpMode {
                         // Start place specimen
                         new ParallelAction(
                                 ThisWrist.WristParallel(),
-                                ThisArm.highRung(),
-                                ThisClaw.CloseClaw()
+                                ThisClaw.CloseClaw(),
+                                ThisArm.highRung()
                         ),
 
                         new ParallelAction(
@@ -702,15 +702,20 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
                         new ParallelAction(
                                 ThisWrist.WristParallel(),
-                                ThisArm.SpecimenPickUp(),
-                                ThisClaw.CloseClaw()
+                                ThisClaw.CloseClaw(),
+                                ThisArm.SpecimenPickUp()
                         ),
 
                         // End place specimen
 
                         //Park
 
-                        trajectory5.build()
+                        new ParallelAction(
+                                trajectory5.build(),
+                                ThisClaw.CloseClaw()
+
+                        )
+
 
 
 
