@@ -50,10 +50,11 @@ public class TwoSpecimenAuto extends LinearOpMode {
     private int currentIndex = 0;
 
 
-    private final double ROTATE_CLAW_ZERO = 0.30; // Match the value from TeleOp
+    private final double ROTATE_CLAW_ZERO = 0.75; // Match the value from TeleOp
 
 
     private final double CLAW_CLOSED_POSITION = 0.9;
+
 
 
     public class Claw {
@@ -69,6 +70,22 @@ public class TwoSpecimenAuto extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 claw.setPosition(0);
+                return false;
+            }
+        }
+
+
+
+
+        public Action CloseClawSpecimen() {
+            return new Claw.CloseClawSpecimen();
+        }
+
+        public class CloseClawSpecimen implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                claw.setPosition(0);
+                sleep(1000);
                 return false;
             }
         }
@@ -155,11 +172,23 @@ public class TwoSpecimenAuto extends LinearOpMode {
             }
         }
 
+        public class RotateToPlace implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                rotateClaw.setPosition(0.1);
+                return false;
+            }
+        }
+
 
 
 
         public Action RotateZero() {
             return new RotateClaw.RotateZero();
+        }
+
+        public Action RotateToPlace() {
+            return new RotateClaw.RotateToPlace();
         }
 
 
@@ -180,7 +209,7 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
 
         public class highRung implements Action {
-            double heightInInches = 13;
+            double heightInInches = 14.5;
             double power = 1.0;
 
 
@@ -423,7 +452,7 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
 
         public class SpecimenPickUp implements Action {
-            double heightInInches = 2.5;
+            double heightInInches = 1.75;
             double power = 0.6;
 
 
@@ -495,7 +524,7 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
     }
 
-    
+
     public class TimeoutAction implements Action {
         private final Action action;
         private final ElapsedTime timer;
@@ -545,11 +574,11 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
 
         TrajectoryActionBuilder trajectory1 = drive.actionBuilder(new Pose2d(7.93, -43.69, Math.toRadians(90)))
-                .splineToConstantHeading(new Vector2d(28.10, -57.47), Math.toRadians(-34.33))
-                .splineToConstantHeading(new Vector2d(43.08, -13.27), Math.toRadians(71.28))
-                .splineToConstantHeading(new Vector2d(47.38, -57.91), Math.toRadians(-84.50));
+                .splineToConstantHeading(new Vector2d(28.10, -55.47), Math.toRadians(-34.33))
+                .splineToConstantHeading(new Vector2d(43.08, -15.27), Math.toRadians(71.28))
+                .splineToConstantHeading(new Vector2d(47.38, -55.91), Math.toRadians(-84.50));
 
-        TrajectoryActionBuilder trajectory2 = drive.actionBuilder(new Pose2d(47.38, -57.91, Math.toRadians(90.00)))
+        TrajectoryActionBuilder trajectory2 = drive.actionBuilder(new Pose2d(47.38, -55.91, Math.toRadians(90.00)))
                 .splineToConstantHeading(new Vector2d(47.38, -45.00), Math.toRadians(89.66));
 
         TrajectoryActionBuilder trajectory3 = drive.actionBuilder(new Pose2d(47.38, -45.00, Math.toRadians(90.00)))
@@ -557,9 +586,9 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
 
         TrajectoryActionBuilder trajectory4 = drive.actionBuilder(new Pose2d(47.38, -57.91, Math.toRadians(90.00)))
-                .splineToConstantHeading(new Vector2d(7.93, -43.69), Math.toRadians(160.22));
+                .splineToConstantHeading(new Vector2d(2.93, -41.69), Math.toRadians(160.22));
 
-        TrajectoryActionBuilder trajectory5 = drive.actionBuilder(new Pose2d(7.93, -43.69, Math.toRadians(90.00)))
+        TrajectoryActionBuilder trajectory5 = drive.actionBuilder(new Pose2d(2.93, -43.69, Math.toRadians(90.00)))
                 .splineToConstantHeading(new Vector2d(60.58, -63.55), Math.toRadians(-20.66));
 
 
@@ -625,13 +654,13 @@ public class TwoSpecimenAuto extends LinearOpMode {
 
                         // Back up so Zaria has time
                         trajectory2.build(),
-                        // Zaria sleep
                         trajectory3.build(),
 
                         // Pick up and place preload specimen
-                        ThisClaw.CloseClaw(),
-                        // Zaria sleep
+                        ThisClaw.CloseClawSpecimen(),
                         ThisArm.highRung(),
+                        // Rotate it so it can place
+                        ThisRotateClaw.RotateToPlace(),
 
                         new ParallelAction(
                                 ThisClaw.CloseClaw(),
@@ -674,7 +703,7 @@ public class TwoSpecimenAuto extends LinearOpMode {
                         new ParallelAction(
                                 ThisWrist.WristParallel(),
                                 ThisArm.SpecimenPickUp(),
-                                ThisClaw.OpenClaw()
+                                ThisClaw.CloseClaw()
                         ),
 
                         // End place specimen
