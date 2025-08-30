@@ -17,7 +17,7 @@ public class LinearLift2425 {
     private static final double LEAD_SCREW_PITCH = 4.72441; // Inches per revolution
     private static final double TICKS_PER_INCH = TICKS_PER_REV / LEAD_SCREW_PITCH;
 
-    private double holdingPower = 0.1; // Power to hold the lift in place
+    double holdingPower = 0.1; // Power to hold the lift in place
     private boolean isFrozen = false; // Flag to check if the lift should be frozen
 
     // State variables
@@ -28,7 +28,7 @@ public class LinearLift2425 {
     public double error;
 
 
-    LinearLift2425(DcMotor liftMotor1, DcMotor liftMotor2, ElapsedTime runtime, Telemetry telemetry) {
+    public LinearLift2425(DcMotor liftMotor1, DcMotor liftMotor2, ElapsedTime runtime, Telemetry telemetry) {
         this.liftMotor1 = liftMotor1;
         this.liftMotor2 = liftMotor2;
         this.runtime = runtime;
@@ -94,23 +94,17 @@ public class LinearLift2425 {
 
 
     // Predefined heights
-    public void highBasket() {
-        moveToHeight(33.0, 0.45);
-    }
 
-    public void lowBasket() {
-        moveToHeight(26.25, 0.30);
+    public void getReady() {
+        moveToHeight(17.0,0.50);
     }
 
     public void highRung() {
-        moveToHeight(14.0, 0.50);
+        moveToHeight(8.0, 0.70);
     }
 
-    public void lowRung() {
-        moveToHeight(8.0, 0.25);
-    }
 
     public void neutral() {
-        moveToHeight(3.0, 0.30);
+        moveToHeight(0.0, 0.30);
     }
 }
